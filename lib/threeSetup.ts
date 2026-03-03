@@ -16,7 +16,7 @@ export function initScene() {
 
   renderer.setPixelRatio(window.devicePixelRatio); // Set the pixel ratio to the device's pixel ratio
   renderer.setSize(window.innerWidth, window.innerHeight); // Set the size of the renderer to fill the entire screen
-  camera.position.setZ(30); // Start the camera pointed at the center of the scene
+  camera.position.setZ(5); // Start the camera pointed at the center of the scene
 
   renderer.render(scene, camera); // Render the scene and camera
 
