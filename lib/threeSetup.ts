@@ -1,6 +1,8 @@
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 export function initScene() {
+  //==== Core scene setup ===//
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(
     75, // FOV
@@ -20,5 +22,8 @@ export function initScene() {
 
   renderer.render(scene, camera); // Render the scene and camera
 
-  return { scene, camera, renderer };
+  //==== User controls ===//
+  const controls = new OrbitControls(camera, renderer.domElement); // Allow zooming, panning, and rotating the scene with the mouse
+
+  return { scene, camera, renderer, controls };
 }

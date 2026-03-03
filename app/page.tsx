@@ -1,6 +1,7 @@
 "use client"; // Needed since Three.js runs only client-side
 
 import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { useEffect } from "react";
 import { initScene } from "../lib/threeSetup"; // Three.js setup
 import { createCube } from "../lib/geometry"; // Shapes to add to the scene
@@ -9,6 +10,8 @@ import { createCube } from "../lib/geometry"; // Shapes to add to the scene
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
+
+let controls: OrbitControls; // For user interaction with the scene (e.g., zoom, pan, rotate)
 
 let shapes: THREE.Mesh[] = []; // All shapes in the scene
 //=====================//
@@ -21,14 +24,13 @@ export default function Home() {
     scene = init.scene;
     camera = init.camera;
     renderer = init.renderer;
+    controls = init.controls;
 
-    shapes.push(createCube()); // Add the cube to the list of shapes
-    scene.add(...shapes); // Add the shapes to the scene
+    debugSetup(); // For testing only, will be removed in the future
 
     animate(); // Start the animation loop
     
-    // Dispose of the scene when done
-    return () => { disposeScene(); };
+    return () => { disposeScene(); }; // Dispose of the scene when done
   }, []);
 
   return (
@@ -52,11 +54,13 @@ function animate() {
     shape.rotation.y += 0.01; // Rotate the shape on the y-axis
   });
 
+  controls.update(); // To ensure the control changes are shown in the scene
+
   renderer.render(scene, camera);
 }
 
 //==========================================================//
-//===================== Cleanup ============================//
+//===================== Cleanup & Helpers ============================//
 function disposeScene() {
   shapes.forEach((shape) => {
     shape.geometry.dispose(); // Dispose of the geometry
@@ -72,3 +76,10 @@ function disposeScene() {
   renderer.dispose(); // Dispose of the renderer
 }
 
+function debugSetup() {
+  shapes.push(createCube()); // Add the cube to the list of shapes
+  scene.add(...shapes); // Add the shapes to the scene
+
+  const gridhelper = new THREE.GridHelper(50, 10);
+  scene.add(gridhelper);
+}
