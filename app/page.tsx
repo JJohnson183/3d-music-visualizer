@@ -2,7 +2,7 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { initScene } from "../lib/threeSetup"; // Three.js setup
 import { createCube, createStar } from "../lib/geometry"; // Shapes to add to the scene
 
@@ -23,6 +23,8 @@ let starSpread = 100; // The range in which to randomly place the stars (e.g., -
 
 
 export default function Home() {
+  const [menuOpen, setMenuOpen] = useState(true);
+
   // Initialize the Three.js scene on startup
   useEffect(() => {
     const init = initScene(); // Used to set up the scene, camera, and renderer
@@ -40,10 +42,50 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <h1 className="flex flex-col items-center gap-4">
-        3D Particle Music Visualizer
-      </h1>
+    <div className="fixed top-4 left-4 text-white">
+      {/* Menu Button */}
+      <button 
+        onClick={() => setMenuOpen(!menuOpen)}
+        className="p-2 hover:bg-white/10 rounded transition-colors"
+        aria-label="Toggle menu"
+      >
+        <div className="w-6 space-y-1.5">
+          <div className="h-0.5 bg-white"></div>
+          <div className="h-0.5 bg-white"></div>
+          <div className="h-0.5 bg-white"></div>
+        </div>
+      </button>
+
+      {/* Menu Content */}
+      {menuOpen && ( // Only show the menu content if the menu is open
+        <div className="mt-4 bg-white/50 p-4">
+
+          {/* Title */}
+          <h1 className="text-xl font-bold mb-2">
+            3D Particle Music Visualizer
+          </h1>
+
+          {/* MP3 add button */}
+          <div className="space-y-2 text-sm">
+            <p>Controls go here</p>
+          </div>
+
+          {/* Credits */}
+          <div className={"flex items-center gap-2 text-xs"}>
+            <span>Made by Jordan S. Johnson</span>
+            <a 
+              href="https://github.com/JJohnson183/3d-music-visualizer" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:opacity-70 transition-opacity"
+              aria-label="View on GitHub"
+            >
+              <img src="/github.svg" alt="GitHub" className="w-4 h-4" />
+            </a>
+          </div>
+
+        </div>
+      )}
     </div>
   );
 }
