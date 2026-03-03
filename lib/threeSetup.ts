@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+const maxCameraZoom = 200; // Maximum distance the camera can zoom out
+const minCameraZoom = 2; // Minimum distance the camera can zoom in
 
 export function initScene() {
   //==== Core scene setup ===//
@@ -24,6 +26,9 @@ export function initScene() {
 
   //==== User controls ===//
   const controls = new OrbitControls(camera, renderer.domElement); // Allow zooming, panning, and rotating the scene with the mouse
+  controls.enableDamping = true; // Add some inertia to make panning and rotating feel smoother
+  controls.maxDistance = maxCameraZoom; // Limit how far the user can zoom out
+  controls.minDistance = minCameraZoom; // Limit how far the user can zoom in
 
   return { scene, camera, renderer, controls };
 }

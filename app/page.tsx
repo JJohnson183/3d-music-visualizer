@@ -11,10 +11,10 @@ let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
 
-let controls: OrbitControls; // For user interaction with the scene (e.g., zoom, pan, rotate)
-
 let shapes: THREE.Mesh[] = []; // All shapes in the scene
 
+// Camera parameters
+let controls: OrbitControls; // For user interaction with the scene (e.g., zoom, pan, rotate)
 
 // Star parameters
 let starCount = 300; // Number of stars to populate the scene with
