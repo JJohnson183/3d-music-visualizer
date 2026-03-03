@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { useEffect } from "react";
 import { initScene } from "../lib/threeSetup"; // Three.js setup
-import { createCube } from "../lib/geometry"; // Shapes to add to the scene
+import { createCube, createStar } from "../lib/geometry"; // Shapes to add to the scene
 
 //=== Scene Data ===//
 let scene: THREE.Scene;
@@ -14,6 +14,11 @@ let renderer: THREE.WebGLRenderer;
 let controls: OrbitControls; // For user interaction with the scene (e.g., zoom, pan, rotate)
 
 let shapes: THREE.Mesh[] = []; // All shapes in the scene
+
+
+// Star parameters
+let starCount = 300; // Number of stars to populate the scene with
+let starSpread = 100; // The range in which to randomly place the stars (e.g., -25 to 25 on each axis)
 //=====================//
 
 
@@ -27,6 +32,7 @@ export default function Home() {
     controls = init.controls;
 
     debugSetup(); // For testing only, will be removed in the future
+    populateScene(); // Populate the scene with stars
 
     animate(); // Start the animation loop
     
@@ -59,6 +65,20 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+// Add the stars to the scene at random positions
+function populateScene() {
+  for (let i = 0; i < starCount; i++) {
+    const star = createStar();
+
+    // Get random x, y, and z positions in the range of -25 to 25
+    const [x, y, z] = Array(3).fill(0).map(() => THREE.MathUtils.randFloatSpread(starSpread));
+    star.position.set(x, y, z);
+
+    shapes.push(star);
+    scene.add(star);
+  }
+}
+
 //==========================================================//
 //===================== Cleanup & Helpers ============================//
 function disposeScene() {
@@ -77,9 +97,6 @@ function disposeScene() {
 }
 
 function debugSetup() {
-  shapes.push(createCube()); // Add the cube to the list of shapes
-  scene.add(...shapes); // Add the shapes to the scene
-
   const gridhelper = new THREE.GridHelper(50, 10);
   scene.add(gridhelper);
 }
