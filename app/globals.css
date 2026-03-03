@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Used to make the canvas fill the entire screen */ 
+canvas{
+  position: fixed;
+  top: 0;
+  left: 0;
+}
