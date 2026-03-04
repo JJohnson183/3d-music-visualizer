@@ -5,7 +5,13 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { useEffect, useState } from "react";
 import { initScene } from "../components/threeSetup"; // Three.js setup
 import { createCube, createStar } from "../components/geometry"; // Shapes to add to the scene
+import { 
+  uploadFile, 
+  playAudio,
+  clearAudioData
+} from "../lib/audio"; // For handling audio files
 
+//=================//
 //=== Scene Data ===//
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
@@ -67,11 +73,18 @@ export default function Home() {
 
           {/* MP3 add button */}
           <div className="space-y-2 text-sm">
-            <p>Controls go here</p>
+            <p>Upload MP3 Here</p>
+            <input 
+              type="file" 
+              accept="audio/mp3,audio/mpeg"
+              className="block w-full text-sm text-gray-900 bg-gray-50 rounded border border-gray-300 cursor-pointer focus:outline-none"
+              // Process audio file and and store the data
+              onChange={async (event) => await onFileUpload(event)}
+            />
           </div>
 
           {/* Credits */}
-          <div className={"flex items-center gap-2 text-xs"}>
+          <div className="mt-4 flex items-center gap-2 text-xs">
             <span>Made by Jordan S. Johnson</span>
             <a 
               href="https://github.com/JJohnson183/3d-music-visualizer" 
@@ -119,6 +132,22 @@ function populateScene() {
     shapes.push(star);
     scene.add(star);
   }
+}
+
+//=============================================================//
+//===================== Logic Helpers =========================//
+async function onFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
+  // 1) Clear and stop any existing audio data
+  clearAudioData();
+
+  // 2) Process the new audio file and store it
+  const result = await uploadFile(event); // Handle the file upload and processing
+  if(result?.error) return alert(result.error); // Notify user on error
+
+  // 3) Play the audio
+  playAudio();
+
+  // TODO: Add basic sound visualization
 }
 
 //==========================================================//
