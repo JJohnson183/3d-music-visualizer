@@ -3,8 +3,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { useEffect, useState } from "react";
-import { initScene } from "../components/threeSetup"; // Three.js setup
-import { createCube, createStar } from "../components/geometry"; // Shapes to add to the scene
+import { initScene } from "../lib/scene/threeSetup"; // Three.js setup
+import { createCube, createStar } from "../lib/scene/geometry"; // Shapes to add to the scene
 import { 
   uploadFile, 
   playAudio,
