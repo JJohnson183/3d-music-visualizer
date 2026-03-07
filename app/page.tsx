@@ -8,7 +8,9 @@ import { createCube, createStar } from "../lib/scene/geometry"; // Shapes to add
 import { 
   uploadFile, 
   playAudio,
-  clearAudioData
+  clearAudioData,
+  getAverageVolume,
+  getBass,
 } from "../lib/audio"; // For handling audio files
 
 //=================//
@@ -107,17 +109,35 @@ export default function Home() {
 //===================== Scene Helpers =========================//
 // Animation loop to continuously render the scene
 function animate() {
-  requestAnimationFrame(animate);
+  requestAnimationFrame(animate); // Request the next frame to keep the animation going
 
-  // Rotate each shape (For proof things are 3d and animating)
-  shapes.forEach((shape) => {
-    shape.rotation.x += 0.01; // Rotate the shape on the x-axis
-    shape.rotation.y += 0.01; // Rotate the shape on the y-axis
-  });
+  shapeReactions(); // Update how the shapes react to the audio data
 
   controls.update(); // To ensure the control changes are shown in the scene
-
   renderer.render(scene, camera);
+}
+
+/** Defines how the shapes react to the audio data (e.g., volume, bass, treble) */
+function shapeReactions(){
+  // 1) Get real-time audio data
+  const volume = getAverageVolume(); // 0-255
+  const bass = getBass(); // 0-255
+
+  // 2) Make stars react
+  shapes.forEach((shape) => {
+    // Temp rotation
+    shape.rotation.x += 0.01; // Rotate the shape on the x-axis
+    shape.rotation.y += 0.01; // Rotate the shape on the y-axis
+
+    // Scale
+    const scale = 1 + (volume / 255) * 3.5; // Scale between 1 and 4.5 based on volume
+    shape.scale.set(scale, scale, scale);
+    
+    // Position
+    
+    // Color
+    
+  });
 }
 
 // Add the stars to the scene at random positions

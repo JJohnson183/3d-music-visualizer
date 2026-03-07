@@ -1,9 +1,16 @@
 //========= This file is used to handle all audio processing and related functionality ===============//
 
-// Define main audio engine for the app (created lazily on first use)
-let audioController: AudioContext | null = null;
-let audioData: AudioBuffer | null = null; // Stores the decoded audio data
 
+//======= Core Data =======//
+let audioController: AudioContext | null = null;
+let audioData: AudioBuffer | null = null; // The main audio engine for the app. Stores the decoded audio data
+
+let analyser: AnalyserNode | null = null; // Analyzes audio frequencies for visualization
+let frequencyData: Uint8Array | null = null; // Stores current frequency data (0-255 for each frequency bin)
+
+const fftSize = 256; // Number of frequency bins for analysis (must be a power of 2, e.g. 256, 512, 1024)
+
+//======= Getters & Setters =======//
 // Get or create the AudioContext for the app
 const getAudioContext = () => {
   if (!audioController) {
@@ -43,18 +50,71 @@ async function processAudioFile(file: File): Promise<AudioBuffer> {
 }
 
 //==================================================================//
+//========================= Audio Analysis =============================//
+
+/** Set up Fast Fourier Transform (FFT) analyzer to analyze the audio data */
+function setupAnalyser() {
+    const audioCtrl = getAudioContext();
+    
+    if (!analyser) {
+        analyser = audioCtrl.createAnalyser();
+        // split the audio into fftSize/2 frequency bins to analyze as a range of frequencies (lower = more bass, higher = more treble)
+        analyser.fftSize = fftSize;
+        frequencyData = new Uint8Array(analyser.frequencyBinCount);
+    }
+    
+    return analyser;
+}
+
+/** Get current frequency data at each moment in the audio (so things can react to details of each moment in the audio) */
+export function getFrequencyData(): Uint8Array | null {
+    if (!analyser || !frequencyData) return null;
+    
+    // Updates frequencyData with current values
+    analyser.getByteFrequencyData(frequencyData as Uint8Array<ArrayBuffer>);
+    return frequencyData;
+}
+
+/** Get average volume (0-255) */
+export function getAverageVolume(): number {
+    const data = getFrequencyData();
+    if (!data) return 0;
+    
+    // For every frequency bin, sum up the values and divide by the number of bins to get the average volume
+    const sum = data.reduce((a, b) => a + b, 0);
+    return sum / data.length;
+}
+
+/** Get bass frequencies (0-255) - lower frequency bins */
+export function getBass(): number {
+    const data = getFrequencyData();
+    if (!data) return 0;
+    
+    // Get the first 10% of frequency bins (Bass is typically in the first 10% of frequency bins)
+    // Then sum up those values and divide by the number of bins to get the average bass level
+    const bassData = data.slice(0, Math.floor(data.length * 0.1));
+    const sum = bassData.reduce((a, b) => a + b, 0);
+    return sum / bassData.length;
+}
+
+//==================================================================//
 //========================= Audio Playback =============================//
 export function playAudio() {
+    // 1) Define the audio controller and analyser
     const audioCtrl = getAudioContext();
-    const source = audioCtrl.createBufferSource(); // Create a source node for the audio
+    const analyzer = setupAnalyser(); 
+
+    // 2) Create a buffer source for the audio data so it can be played and analyzed
+    const source = audioCtrl.createBufferSource();
     source.buffer = audioData;
-    source.connect(audioCtrl.destination); // Connect the source to the audio output
-    source.start(0); // Start playing the audio immediately
     
-    //Loop the audio by restarting it when it ends
-    source.onended = () => {
-        playAudio(); // Restart the audio when it ends to create a loop
-    };
+    // 3) Route audio through analyser so it can extract frequency data (source -> analyser -> destination)
+    source.connect(analyzer);
+    analyzer.connect(audioCtrl.destination);
+    
+    // 4) Start playing the audio and set it to loop when it ends
+    source.start(0);
+    source.onended = () => {playAudio();}; // Loop when the audio reaches the end
 }
 
 export function stopAudio() {
@@ -64,12 +124,13 @@ export function stopAudio() {
 //==========================================================//
 //===================== Helpers ============================//
 export function clearAudioData(){
-  audioData = null; // Clear the stored audio data
+    audioData = null; // Clear the stored audio data
+    analyser = null; // Clear the analyser
 
-  if(audioController && audioController.state !== "closed") {
-    audioController.close(); // Close the audio context to stop any playing audio and free memory
-    audioController = null;
-  }
+    if(audioController && audioController.state !== "closed") {
+        audioController.close(); // Close the audio context to stop any playing audio and free memory
+        audioController = null;
+    }
 }
 
 
