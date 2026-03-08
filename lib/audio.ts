@@ -33,7 +33,6 @@ export async function uploadFile(event: React.ChangeEvent<HTMLInputElement>){
     try{
         audioData = await processAudioFile(file);
     } catch (error) {
-        console.error('Error processing audio file:', error);
         return { success: false, error: "There was a problem while processing the audio file." };
     }
 

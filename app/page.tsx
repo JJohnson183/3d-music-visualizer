@@ -83,7 +83,7 @@ export default function Home() {
               accept="audio/mp3,audio/mpeg"
               className="block w-full text-sm text-gray-900 bg-gray-50 rounded border border-gray-300 cursor-pointer focus:outline-none"
               // Clear and reset data on click
-              onClick={onFileInputClick}
+              onClick={(event) => onFileInputClick(event)}
               // Process audio file on selection
               onChange={async (event) => await onFileUpload(event)}
             />
@@ -166,24 +166,22 @@ function populateScene() {
 
 //=============================================================//
 //===================== Logic Helpers =========================//
-/** Called when user clicks the file input */
-function onFileInputClick() {
-  // 1) Clear and stop any existing audio data
+/** Called when user clicks the file input button */
+function onFileInputClick(event: React.MouseEvent<HTMLInputElement>) {
+  // 1) Clear input value so selecting the same file triggers onChange
+  event.currentTarget.value = '';
+
+  // 2) Clear and stop any existing audio data
   clearAudioData();
 
-  // 2) Reset shapes to default
+  // 3) Reset shapes to default
   resetShapes();
 }
 
 /** Called only when a file is selected */
-async function onFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
-  console.log("File selected:", event.target.files);
-  
-  // 1) Check if file was actually selected (user didn't cancel)
-  if(!event.target.files || event.target.files.length === 0) {
-    console.log("No file selected");
-    return;
-  }
+async function onFileUpload(event: React.ChangeEvent<HTMLInputElement>) {  
+  // 1) Check if file was actually selected
+  if(!event.target.files || event.target.files.length === 0) return;
 
   // 2) Process the new audio file and store it
   const result = await uploadFile(event);
