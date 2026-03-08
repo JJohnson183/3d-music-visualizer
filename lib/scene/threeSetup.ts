@@ -1,7 +1,18 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+
 const maxCameraZoom = 200; // Maximum distance the camera can zoom out
 const minCameraZoom = 2; // Minimum distance the camera can zoom in
+
+// Bloom parameters
+const useBloom = true; // Toggle bloom post-processing on/off
+const bloomStrength = 1.2; // How intense the bloom glow is
+const bloomRadius = 0.4; // How far the bloom spreads
+const bloomThreshold = 0.2; // Minimum brightness to trigger bloom (0 = everything glows)
+
 
 export function initScene() {
   //==== Core scene setup ===//
@@ -24,11 +35,24 @@ export function initScene() {
 
   renderer.render(scene, camera); // Render the scene and camera
 
+  //==== Post-processing (Bloom) ===//
+  // Post-processing pipeline: renders the scene, then optionally applies bloom glow
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera)); // Base render pass
+  if (useBloom) { // Add bloom pass if enabled
+    composer.addPass(new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      bloomStrength,
+      bloomRadius,
+      bloomThreshold
+    ));
+  }
+
   //==== User controls ===//
   const controls = new OrbitControls(camera, renderer.domElement); // Allow zooming, panning, and rotating the scene with the mouse
   controls.enableDamping = true; // Add some inertia to make panning and rotating feel smoother
   controls.maxDistance = maxCameraZoom; // Limit how far the user can zoom out
   controls.minDistance = minCameraZoom; // Limit how far the user can zoom in
 
-  return { scene, camera, renderer, controls };
+  return { scene, camera, renderer, composer, controls };
 }

@@ -10,7 +10,7 @@ export function createCube() {
 
 export function createStar() {
     // Create star
-    const size = 0.3; // Size of the star 
+    const size = 0.4; // Size of the star 
     const geometry = new THREE.SphereGeometry(size, 24, 24);
     const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
     const star = new THREE.Mesh(geometry, material);

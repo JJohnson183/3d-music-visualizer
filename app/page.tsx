@@ -2,6 +2,7 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { useEffect, useState } from "react";
 import { initScene } from "../lib/scene/threeSetup"; // Three.js setup
 import { createCube, createStar } from "../lib/scene/geometry"; // Shapes to add to the scene
@@ -33,6 +34,7 @@ let shapeBaseY: number[] = []; // Spawn Y per shape, fixed so pulse never drifts
 
 // Camera parameters
 let controls: OrbitControls; // For user interaction with the scene (e.g., zoom, pan, rotate)
+let composer: EffectComposer; // Post-processing composer for bloom effect
 
 // Star parameters
 let starCount = 300; // Number of stars to populate the scene with
@@ -56,6 +58,7 @@ export default function Home() {
     scene = init.scene;
     camera = init.camera;
     renderer = init.renderer;
+    composer = init.composer;
     controls = init.controls;
 
     debugSetup(); // For testing only, will be removed in the future
@@ -219,7 +222,7 @@ function animate() {
   shapeReactions(); // Update how the shapes react to the audio data
 
   controls.update(); // To ensure the control changes are shown in the scene
-  renderer.render(scene, camera);
+  composer.render(); // Render using the post-processing composer that applies bloom
 }
 
 /** Defines how the shapes react to the audio data */
