@@ -13,6 +13,7 @@ const fftSize = 256; // Number of frequency bins for analysis (must be a power o
 let playbackStartTime: number = 0; // AudioContext time when the current play started
 let currentSource: AudioBufferSourceNode | null = null; // The currently playing audio source node
 let isPlaying: boolean = false; // Whether audio is playing or not
+let currentFileName: string = ''; // Name of the currently loaded audio file
 
 //======= Getters & Setters =======//
 // Get or create the AudioContext for the app
@@ -45,6 +46,7 @@ export async function uploadFile(event: React.ChangeEvent<HTMLInputElement>){
     // 2) Verify and process the audio file.
     try{
         audioData = await processAudioFile(file);
+        currentFileName = file.name.replace(/\.[^/.]+$/, ''); // Store name without file extension
     } catch (error) {
         return { success: false, error: "There was a problem while processing the audio file." };
     }
@@ -167,6 +169,10 @@ export function getIsPlaying(): boolean {
     return isPlaying;
 }
 
+export function getFileName(): string {
+    return currentFileName;
+}
+
 /** Get the current playback position and total duration in seconds */
 export function getPlaybackTime(): { current: number, total: number } {
     if (!audioController || !audioData) return { current: 0, total: 0 };
@@ -186,6 +192,7 @@ export function clearAudioData(){
     frequencyData = null;
     smoothedBass = 0;
     playbackStartTime = 0;
+    currentFileName = '';
     isPlaying = false; // Prevent the onended callback from restarting playback
 
     // Stop the audio source before closing the context

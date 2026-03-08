@@ -12,6 +12,7 @@ import {
   stopAudio,
   resumeAudio,
   getIsPlaying,
+  getFileName,
   clearAudioData,
   getBass,
   getMid,
@@ -172,8 +173,13 @@ function menuContent(){
         />
       </div>
 
+      
       {/* Playback Bar */}
       <div className="mt-4 space-y-1">
+        {/* MP3 Title (Empty with no audio loaded) */}
+        <div id="playback-title" className="text-sm text-white/80 truncate">
+        </div>
+
         {/* Progress bar track */}
         <div className="w-full h-1.5 bg-white/30 rounded-full overflow-hidden">
           <div id="playback-fill" className="h-full bg-white rounded-full transition-none" style={{width: '0%'}}></div>
@@ -373,6 +379,10 @@ function updatePlaybackBar() {
   if (fillElement) fillElement.style.width = `${progressPercent}%`;
   if (currentTimeElement) currentTimeElement.textContent = formatTime(current);
   if (totalTimeElement) totalTimeElement.textContent = formatTime(total);
+
+  // 4) Update the track title
+  const titleElement = document.getElementById('playback-title');
+  if (titleElement) titleElement.textContent = getFileName();
 }
 
 /** Update the pause/resume button state with an id reference. (Avoids rerendering react elements 60 times per second) */
