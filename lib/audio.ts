@@ -19,6 +19,15 @@ const getAudioContext = () => {
   return audioController;
 }
 
+let smoothedBass = 0; // Smoothed bass value for more gradual pulsing of shapes
+const smoothAmmount = 0.1; // How much to smooth the bass value (0-1, higher is more smoothing)
+export const getSmoothedBass = () => {
+    let bass = getBass(); // Get current bass value (0-255)
+
+    // Smooth the bass value for more gradual pulsing (if bass is null, keep the previous smoothed value)
+    if (bass !== null) smoothedBass += (bass - smoothedBass) * smoothAmmount;
+    return smoothedBass;
+}
 
 //==================================================================//
 //========================= File Processing =============================//
@@ -116,7 +125,6 @@ export function getTreble(): number | null {
     return sum / trebleData.length;
 }
 
-
 //==================================================================//
 //========================= Audio Playback =============================//
 export function playAudio() {
@@ -147,6 +155,7 @@ export function clearAudioData(){
     audioData = null; // Clear the stored audio data
     analyser = null; // Clear the analyser
     frequencyData = null; // Clear the frequency data
+    smoothedBass = 0; // Reset smoothed bass to default
 
     if(audioController && audioController.state !== "closed") {
         audioController.close(); // Close the audio context to stop any playing audio and free memory

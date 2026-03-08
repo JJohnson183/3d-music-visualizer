@@ -11,7 +11,8 @@ import {
   clearAudioData,
   getBass,
   getMid,
-  getTreble
+  getTreble,
+  getSmoothedBass
 } from "../lib/audio"; // For handling audio files
 
 //=================//
@@ -32,7 +33,8 @@ let controls: OrbitControls; // For user interaction with the scene (e.g., zoom,
 let starCount = 300; // Number of stars to populate the scene with
 let starSpread = 100; // The range in which to randomly place the stars (e.g., -25 to 25 on each axis)
 let starOrbitSpeed = 0.0005; // How fast the stars orbit around their center in radians per frame
-let starPulseIntensity = 0.4; // How fast the stars pulse in response to the bass frequencies
+let starPulseIntensity = 1.5; // How much the stars pulse in response to the bass frequencies (mutiplier for radius)
+
 
 //=====================//
 
@@ -144,17 +146,19 @@ function animate() {
 /** Defines how the shapes react to the audio data */
 function shapeReactions(){
   // 1) Get real-time audio data
-  const bass = getBass(); // 0-255
   const mid = getMid(); // 0-255
   const treble = getTreble(); // 0-255
 
-  // 2) Make stars react
+  // 2) Smooth the bass value for more gradual pulsing
+  let smoothedBass = getSmoothedBass();
+  
+  // 3) Make stars react
   shapes.forEach((shape, index) => {
     // Constant orbit (Must be done before pulse so the pulse sets on the new new angle set by the orbit)
     handleShapeOrbit(shape, index);
 
     //===== Position from center (bass) =====//
-    handleShapePulse(shape, index, bass);
+    handleShapePulse(shape, index, smoothedBass);
 
     //===== Color (Mid) =====//
     handleShapeColors(shape, index, mid);
