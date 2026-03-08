@@ -76,9 +76,9 @@ export function getFrequencyData(): Uint8Array | null {
 }
 
 /** Get average volume (0-255) */
-export function getAverageVolume(): number {
+export function getAverageVolume(): number | null {
     const data = getFrequencyData();
-    if (!data) return 0;
+    if (!data) return null;
     
     // For every frequency bin, sum up the values and divide by the number of bins to get the average volume
     const sum = data.reduce((a, b) => a + b, 0);
@@ -86,9 +86,9 @@ export function getAverageVolume(): number {
 }
 
 /** Get bass frequencies (0-255) - lower frequency bins */
-export function getBass(): number {
+export function getBass(): number | null {
     const data = getFrequencyData();
-    if (!data) return 0;
+    if (!data) return null;
     
     // Get the first 10% of frequency bins (Bass is typically in the first 10% of frequency bins)
     // Then sum up those values and divide by the number of bins to get the average bass level
@@ -96,6 +96,27 @@ export function getBass(): number {
     const sum = bassData.reduce((a, b) => a + b, 0);
     return sum / bassData.length;
 }
+
+export function getMid(): number | null {
+    const data = getFrequencyData();
+    if (!data) return null;
+
+    // Get the middle 20% of frequency bins. Mainly vocals and mid-range instruments
+    const midData = data.slice(Math.floor(data.length * 0.2), Math.floor(data.length * 0.4));
+    const sum = midData.reduce((a, b) => a + b, 0);
+    return sum / midData.length;
+}
+
+export function getTreble(): number | null {
+    const data = getFrequencyData();
+    if (!data) return null;
+
+    // Get the upper 20% of frequency bins. Mainly cymbals and other treble instruments
+    const trebleData = data.slice(Math.floor(data.length * 0.6), Math.floor(data.length * 0.8));
+    const sum = trebleData.reduce((a, b) => a + b, 0);
+    return sum / trebleData.length;
+}
+
 
 //==================================================================//
 //========================= Audio Playback =============================//
@@ -126,6 +147,7 @@ export function stopAudio() {
 export function clearAudioData(){
     audioData = null; // Clear the stored audio data
     analyser = null; // Clear the analyser
+    frequencyData = null; // Clear the frequency data
 
     if(audioController && audioController.state !== "closed") {
         audioController.close(); // Close the audio context to stop any playing audio and free memory

@@ -2,15 +2,16 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { initScene } from "../lib/scene/threeSetup"; // Three.js setup
 import { createCube, createStar } from "../lib/scene/geometry"; // Shapes to add to the scene
 import { 
   uploadFile, 
   playAudio,
   clearAudioData,
-  getAverageVolume,
   getBass,
+  getMid,
+  getTreble
 } from "../lib/audio"; // For handling audio files
 
 //=================//
@@ -20,6 +21,7 @@ let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
 
 let shapes: THREE.Mesh[] = []; // All shapes in the scene
+let shapeHues: number[] = []; // Color hue for each shape (0-1)
 
 // Camera parameters
 let controls: OrbitControls; // For user interaction with the scene (e.g., zoom, pan, rotate)
@@ -119,26 +121,30 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-/** Defines how the shapes react to the audio data (e.g., volume, bass, treble) */
+/** Defines how the shapes react to the audio data */
 function shapeReactions(){
   // 1) Get real-time audio data
-  const volume = getAverageVolume(); // 0-255
   const bass = getBass(); // 0-255
+  const mid = getMid(); // 0-255
+  const treble = getTreble(); // 0-255
 
   // 2) Make stars react
-  shapes.forEach((shape) => {
-    // Temp rotation
-    shape.rotation.x += 0.01; // Rotate the shape on the x-axis
-    shape.rotation.y += 0.01; // Rotate the shape on the y-axis
+  shapes.forEach((shape, index) => {
+    //===== Position (bass) =====//
+    
+    //===== Color (Mid) =====//
+    if(mid === null) { // If a Mid is not present in the audio randomly change color
+      shapeHues[index] += 0.001; // Increment hue slowly
+      if (shapeHues[index] > 1) shapeHues[index] = 0; // Wrap around at 1
 
-    // Scale
-    const scale = 1 + (volume / 255) * 3.5; // Scale between 1 and 4.5 based on volume
-    shape.scale.set(scale, scale, scale);
-    
-    // Position
-    
-    // Color
-    
+      // Update the shape's material color using HSL (Hue, Saturation, Lightness)
+      (shape.material as THREE.MeshStandardMaterial).color.setHSL(shapeHues[index], 1, 0.5);
+    } 
+    else{ // If a Mid is present in the audio react to it
+      // Map mid (0-255) to hue (0-1)
+      const hue = mid / 255;
+      (shape.material as THREE.MeshStandardMaterial).color.setHSL(hue, 1, 0.5); // Update color based on mid
+    }
   });
 }
 
@@ -150,6 +156,8 @@ function populateScene() {
     // Get random x, y, and z positions in the range of -25 to 25
     const [x, y, z] = Array(3).fill(0).map(() => THREE.MathUtils.randFloatSpread(starSpread));
     star.position.set(x, y, z);
+
+    shapeHues.push(Math.random()); // Random starting hue for each star
 
     shapes.push(star);
     scene.add(star);
@@ -183,9 +191,6 @@ async function onFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
 
   // 3) Play the audio
   playAudio();
-  
-  // 4) Clear input so selecting the same file again triggers onChange
-  event.target.value = '';
 }
 
 //==========================================================//
