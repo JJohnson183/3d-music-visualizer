@@ -31,7 +31,11 @@ let controls: OrbitControls; // For user interaction with the scene (e.g., zoom,
 let starCount = 300; // Number of stars to populate the scene with
 let starSpread = 100; // The range in which to randomly place the stars (e.g., -25 to 25 on each axis)
 let starOrbitSpeed = 0.0005; // How fast the stars orbit around their center in radians per frame
+
 //=====================//
+
+//=== Debug Flags ===//
+const showPerfMonitor = false; // Toggle FPS counter in the top-right corner
 
 
 export default function Home() {
@@ -54,7 +58,16 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="fixed top-4 left-4 text-white">
+    <>
+      {/* Performance Monitor */}
+      {showPerfMonitor && (
+        <div id="fps-counter" className="fixed top-4 right-4 text-white text-xs font-mono bg-black/40 px-2 py-1 rounded">
+          -- FPS
+        </div>
+      )}
+
+      <div className="fixed top-4 left-4 text-white">
+      
       {/* Menu Button */}
       <button 
         onClick={() => setMenuOpen(!menuOpen)}
@@ -108,6 +121,7 @@ export default function Home() {
         </div>
       )}
     </div>
+    </>
   );
 }
 
@@ -116,6 +130,8 @@ export default function Home() {
 // Animation loop to continuously render the scene
 function animate() {
   requestAnimationFrame(animate); // Request the next frame to keep the animation going
+
+  if (showPerfMonitor) debugPerformanceMonitor();
 
   shapeReactions(); // Update how the shapes react to the audio data
 
@@ -244,11 +260,6 @@ function disposeScene() {
   renderer.dispose(); // Dispose of the renderer
 }
 
-function debugSetup() {
-  const gridhelper = new THREE.GridHelper(50, 10);
-  scene.add(gridhelper);
-}
-
 /** Reset shape properties to random default when audio is stopped or reset */
 function resetShapes(){
   shapes.forEach((shape, index) => {
@@ -261,4 +272,32 @@ function resetShapes(){
       ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
     }
   });
+}
+
+function debugSetup() {
+  const gridhelper = new THREE.GridHelper(50, 10);
+  scene.add(gridhelper);
+}
+
+// Performance monitor state (only used when showPerfMonitor is true)
+let _frameCount = 0;
+let _lastFpsTime = performance.now();
+
+function debugPerformanceMonitor() {
+  _frameCount++;
+  const now = performance.now();
+
+  // Update FPS every second
+  if (now - _lastFpsTime >= 1000) {
+    // Calculate FPS as the number of frames since the last update divided by the time elapsed in seconds
+    const fps = Math.round(_frameCount * 1000 / (now - _lastFpsTime));
+
+    // Update the FPS counter element
+    const el = document.getElementById('fps-counter');
+    if (el) el.textContent = `${fps} FPS`;
+
+    // Reset frame count and last update time for the next calculation
+    _frameCount = 0;
+    _lastFpsTime = now;
+  }
 }
