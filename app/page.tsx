@@ -22,7 +22,8 @@ let renderer: THREE.WebGLRenderer;
 
 let shapes: THREE.Mesh[] = []; // All shapes in the scene
 let shapeHues: number[] = []; // Color hue for each shape (0-1)
-let shapeAngles: number[] = []; // Current orbit angle for each shape (radians), derived from spawn position
+let shapeAngles: number[] = []; // Orbit angle per shape (radians), incremented each frame
+let shapeRadii: number[] = []; // Spawn radius per shape, kept fixed so orbit path never drifts
 
 // Camera parameters
 let controls: OrbitControls; // For user interaction with the scene (e.g., zoom, pan, rotate)
@@ -31,6 +32,7 @@ let controls: OrbitControls; // For user interaction with the scene (e.g., zoom,
 let starCount = 300; // Number of stars to populate the scene with
 let starSpread = 100; // The range in which to randomly place the stars (e.g., -25 to 25 on each axis)
 let starOrbitSpeed = 0.0005; // How fast the stars orbit around their center in radians per frame
+let starPulseIntensity = 0.4; // How fast the stars pulse in response to the bass frequencies
 
 //=====================//
 
@@ -148,13 +150,14 @@ function shapeReactions(){
 
   // 2) Make stars react
   shapes.forEach((shape, index) => {
-    //===== Position (bass) =====//
-    
+    // Constant orbit (Must be done before pulse so the pulse sets on the new new angle set by the orbit)
+    handleShapeOrbit(shape, index);
+
+    //===== Position from center (bass) =====//
+    handleShapePulse(shape, index, bass);
+
     //===== Color (Mid) =====//
     handleShapeColors(shape, index, mid);
-
-    // Constant orbit
-    handleShapeOrbit(shape, index);
   });
 }
 
@@ -183,20 +186,30 @@ function handleShapeColors(shape: THREE.Mesh, index: number, mid: number | null)
   }
 }
 
+/** Handle shape orbiting around the center of the scene */
 function handleShapeOrbit(shape: THREE.Mesh, index: number) {
-  // 1) Get current radius from center (0, 0, 0) in the XZ plane to always orbit around the center. 
-  //    Use Pythagorean theorem (Wow) to get the radius from the shape's current position
-  const radius = Math.sqrt(shape.position.x ** 2 + shape.position.z ** 2);
+  // 1) Increment the shape's angle based on the defined orbit speed
+  shapeAngles[index] += starOrbitSpeed;
 
-  // 2) Increment the angle each frame
-  shapeAngles[index] += starOrbitSpeed; 
-
-  // 3) Orbit around (0, 0, 0) at the current radius.
-  shape.position.x = Math.cos(shapeAngles[index]) * radius;
-  shape.position.z = Math.sin(shapeAngles[index]) * radius;
+  // 2) Update the shape's position based on its angle and radius to create an orbiting effect
+  shape.position.x = Math.cos(shapeAngles[index]) * shapeRadii[index];
+  shape.position.z = Math.sin(shapeAngles[index]) * shapeRadii[index];
 }
 
-// Add the stars to the scene at random positions
+/** Handle shape pulsing based on the bass frequencies. If no audio is present, do not pulse */
+function handleShapePulse(shape: THREE.Mesh, index: number, bass: number | null) {
+  if (bass === null) return;
+
+  // 1) Calculate pulse amount based on bass level. (1 to 1 + starPulseIntensity)
+  const pulseAmount = 1 + (bass / 255) * starPulseIntensity;
+
+  // 2) Update the shape's position based on the new radius
+  const newRadius = shapeRadii[index] * pulseAmount;
+  shape.position.x = Math.cos(shapeAngles[index]) * newRadius;
+  shape.position.z = Math.sin(shapeAngles[index]) * newRadius;
+}
+
+// Add the stars to the scene at random positions and store their properties for later use in reactions
 function populateScene() {
   for (let i = 0; i < starCount; i++) {
     const star = createStar();
@@ -205,11 +218,10 @@ function populateScene() {
     const [x, y, z] = Array(3).fill(0).map(() => THREE.MathUtils.randFloatSpread(starSpread));
     star.position.set(x, y, z);
     
-    // Get the inital angle from (0, 0, 0) to the star's position in the XZ (horizontal) plane to use as the starting point for orbiting
-    shapeAngles.push(Math.atan2(z, x));
+    shapeAngles.push(Math.atan2(z, x)); // Start orbiting from the shape's spawn angle
+    shapeRadii.push(Math.sqrt(x ** 2 + z ** 2)); // Lock in spawn radius for consistent orbiting
 
-    // Random starting hue for each star
-    shapeHues.push(Math.random());
+    shapeHues.push(Math.random()); // Random starting hue for each star
 
     shapes.push(star);
     scene.add(star);
@@ -271,6 +283,11 @@ function resetShapes(){
     for (let i = 0; i < shape.children.length; i++) {
       ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
     }
+
+    //=== Reset position for star ===//
+    const x = Math.cos(shapeAngles[index]) * shapeRadii[index];
+    const z = Math.sin(shapeAngles[index]) * shapeRadii[index];
+    shape.position.set(x, shape.position.y, z);
   });
 }
 
