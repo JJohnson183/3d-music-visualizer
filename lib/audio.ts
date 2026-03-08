@@ -10,7 +10,9 @@ let frequencyData: Uint8Array | null = null; // Stores current frequency data (0
 
 const fftSize = 256; // Number of frequency bins for analysis (must be a power of 2, e.g. 256, 512, 1024)
 
-let playbackStartTime: number = 0; // AudioContext time when the current play started, used to calculate progress
+let playbackStartTime: number = 0; // AudioContext time when the current play started
+let currentSource: AudioBufferSourceNode | null = null; // The currently playing audio source node
+let isPlaying: boolean = false; // Whether audio is playing or not
 
 //======= Getters & Setters =======//
 // Get or create the AudioContext for the app
@@ -137,19 +139,22 @@ export function playAudio() {
     // 2) Create a buffer source for the audio data so it can be played and analyzed
     const source = audioCtrl.createBufferSource();
     source.buffer = audioData;
+    currentSource = source; // Store the current source so we can stop it explicitly when needed
     
     // 3) Route audio through analyser so it can extract frequency data (source -> analyser -> destination)
     source.connect(analyzer);
     analyzer.connect(audioCtrl.destination);
     
-    // 4) Start playing the audio and set it to loop when it ends
-    playbackStartTime = audioCtrl.currentTime; // Record when playback started to track progress
+    // 4) Start playing the audio and loop when it ends (only if still playing, not stopped)
+    isPlaying = true;
+    playbackStartTime = audioCtrl.currentTime;
     source.start(0);
-    source.onended = () => {playAudio();}; // Loop when the audio reaches the end
+    source.onended = () => { if (isPlaying) playAudio(); }; // Only loop if we haven't been stopped
 }
 
 export function stopAudio() {
     getAudioContext().suspend(); // Suspend the audio context to stop all audio playback
+    isPlaying = false; // Mark as not playing
 }
 
 /** Get the current playback position and total duration in seconds */
@@ -166,16 +171,23 @@ export function getPlaybackTime(): { current: number, total: number } {
 //==========================================================//
 //===================== Helpers ============================//
 export function clearAudioData(){
-    audioData = null; // Clear the stored audio data
-    analyser = null; // Clear the analyser
-    frequencyData = null; // Clear the frequency data
-    smoothedBass = 0; // Reset smoothed bass to default
-    playbackStartTime = 0; // Reset playback start time
+    audioData = null;
+    analyser = null;
+    frequencyData = null;
+    smoothedBass = 0;
+    playbackStartTime = 0;
+    isPlaying = false; // Prevent the onended callback from restarting playback
 
+    // Stop the audio source before closing the context
+    if (currentSource) {
+        currentSource.onended = null; // Detach callback first so it doesn't fire on stop()
+        try { currentSource.stop(); } catch (_) {} // Try/catch since stop() throws if already stopped
+        currentSource = null;
+    }
+
+    // Close the audio context if it exists and is not already closed
     if(audioController && audioController.state !== "closed") {
         audioController.close(); // Close the audio context to stop any playing audio and free memory
         audioController = null;
     }
 }
-
-
