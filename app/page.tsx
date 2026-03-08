@@ -80,7 +80,9 @@ export default function Home() {
               type="file" 
               accept="audio/mp3,audio/mpeg"
               className="block w-full text-sm text-gray-900 bg-gray-50 rounded border border-gray-300 cursor-pointer focus:outline-none"
-              // Process audio file and and store the data
+              // Clear and reset data on click
+              onClick={onFileInputClick}
+              // Process audio file on selection
               onChange={async (event) => await onFileUpload(event)}
             />
           </div>
@@ -156,18 +158,34 @@ function populateScene() {
 
 //=============================================================//
 //===================== Logic Helpers =========================//
-async function onFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
+/** Called when user clicks the file input */
+function onFileInputClick() {
   // 1) Clear and stop any existing audio data
   clearAudioData();
 
+  // 2) Reset shapes to default
+  resetShapes();
+}
+
+/** Called only when a file is selected */
+async function onFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
+  console.log("File selected:", event.target.files);
+  
+  // 1) Check if file was actually selected (user didn't cancel)
+  if(!event.target.files || event.target.files.length === 0) {
+    console.log("No file selected");
+    return;
+  }
+
   // 2) Process the new audio file and store it
-  const result = await uploadFile(event); // Handle the file upload and processing
-  if(result?.error) return alert(result.error); // Notify user on error
+  const result = await uploadFile(event);
+  if(result?.error) return alert(result.error);
 
   // 3) Play the audio
   playAudio();
-
-  // TODO: Add basic sound visualization
+  
+  // 4) Clear input so selecting the same file again triggers onChange
+  event.target.value = '';
 }
 
 //==========================================================//
@@ -190,4 +208,13 @@ function disposeScene() {
 function debugSetup() {
   const gridhelper = new THREE.GridHelper(50, 10);
   scene.add(gridhelper);
+}
+
+/** Reset shape properties to random default when audio is stopped or reset */
+function resetShapes(){
+  shapes.forEach((shape, index) => {
+    // Reset colors
+    shapeHues[index] = Math.random(); // Random starting hue for each star
+    (shape.material as THREE.MeshStandardMaterial).color.setHSL(shapeHues[index], 1, 0.5); // Update color based on treble
+  });
 }
