@@ -9,8 +9,16 @@ export function createCube() {
 }
 
 export function createStar() {
-    const geometry = new THREE.SphereGeometry(0.1, 24, 24);
+    // Create star
+    const size = 0.3; // Size of the star 
+    const geometry = new THREE.SphereGeometry(size, 24, 24);
     const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
     const star = new THREE.Mesh(geometry, material);
+
+    // Add glow
+    const glowMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 });
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(size * 1.5, 24, 24), glowMaterial);
+    star.add(glow);
+
     return star;
 }

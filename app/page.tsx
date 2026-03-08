@@ -2,7 +2,7 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { ChangeEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { initScene } from "../lib/scene/threeSetup"; // Three.js setup
 import { createCube, createStar } from "../lib/scene/geometry"; // Shapes to add to the scene
 import { 
@@ -133,19 +133,33 @@ function shapeReactions(){
     //===== Position (bass) =====//
     
     //===== Color (Mid) =====//
-    if(mid === null) { // If a Mid is not present in the audio randomly change color
-      shapeHues[index] += 0.001; // Increment hue slowly
-      if (shapeHues[index] > 1) shapeHues[index] = 0; // Wrap around at 1
-
-      // Update the shape's material color using HSL (Hue, Saturation, Lightness)
-      (shape.material as THREE.MeshStandardMaterial).color.setHSL(shapeHues[index], 1, 0.5);
-    } 
-    else{ // If a Mid is present in the audio react to it
-      // Map mid (0-255) to hue (0-1)
-      const hue = mid / 255;
-      (shape.material as THREE.MeshStandardMaterial).color.setHSL(hue, 1, 0.5); // Update color based on mid
-    }
+    handleShapeColors(shape, index, mid);
   });
+}
+
+/** Handle shape colors based on Mid frequencies. If no audio is present, randomly change colors over time */
+function handleShapeColors(shape: THREE.Mesh, index: number, mid: number | null) {
+  if(mid === null) { // If a Mid is not present in the audio randomly change color
+    shapeHues[index] += 0.001; // Increment hue slowly
+    if (shapeHues[index] > 1) shapeHues[index] = 0; // Wrap around at 1
+
+    // Update the star color and children to it
+    const hue = shapeHues[index];
+    (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
+    for (let i = 0; i < shape.children.length; i++) {
+      ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
+    }
+  } 
+  else{ // If a Mid is present in the audio react to it
+    // Map mid (0-255) to hue (0-1)
+    const hue = mid / 255;
+    
+    // Update both star and children to it
+    (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
+    for (let i = 0; i < shape.children.length; i++) {
+      ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
+    }
+  }
 }
 
 // Add the stars to the scene at random positions
@@ -216,8 +230,13 @@ function debugSetup() {
 /** Reset shape properties to random default when audio is stopped or reset */
 function resetShapes(){
   shapes.forEach((shape, index) => {
-    // Reset colors
+    //=== Reset colors for star ===//
     shapeHues[index] = Math.random(); // Random starting hue for each star
-    (shape.material as THREE.MeshStandardMaterial).color.setHSL(shapeHues[index], 1, 0.5); // Update color based on treble
+    const hue = shapeHues[index];
+
+    (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
+    for (let i = 0; i < shape.children.length; i++) {
+      ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
+    }
   });
 }
