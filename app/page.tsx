@@ -26,6 +26,7 @@ let shapes: THREE.Mesh[] = []; // All shapes in the scene
 let shapeHues: number[] = []; // Color hue for each shape (0-1)
 let shapeAngles: number[] = []; // Orbit angle per shape (radians), incremented each frame
 let shapeRadii: number[] = []; // Spawn radius per shape, kept fixed so orbit path never drifts
+let shapeBaseY: number[] = []; // Spawn Y per shape, fixed so pulse never drifts
 
 // Camera parameters
 let controls: OrbitControls; // For user interaction with the scene (e.g., zoom, pan, rotate)
@@ -263,10 +264,14 @@ function handleShapePulse(shape: THREE.Mesh, index: number, bass: number | null)
   // 1) Calculate pulse amount based on bass level. (1 to 1 + starPulseIntensity)
   const pulseAmount = 1 + (bass / 255) * starPulseIntensity;
 
-  // 2) Update the shape's position based on the new radius
-  const newRadius = shapeRadii[index] * pulseAmount;
-  shape.position.x = Math.cos(shapeAngles[index]) * newRadius;
-  shape.position.z = Math.sin(shapeAngles[index]) * newRadius;
+  // 2) Get the star's stable 3D base position and pulse outward along its full direction
+  const baseX = Math.cos(shapeAngles[index]) * shapeRadii[index];
+  const baseY = shapeBaseY[index];
+  const baseZ = Math.sin(shapeAngles[index]) * shapeRadii[index];
+
+  shape.position.x = baseX * pulseAmount;
+  shape.position.y = baseY * pulseAmount;
+  shape.position.z = baseZ * pulseAmount;
 }
 
 // Add the stars to the scene at random positions and store their properties for later use in reactions
@@ -289,6 +294,7 @@ function populateScene() {
     // 2) Store the star's properties for later use in reactions
     shapeAngles.push(horizontalAngle); // Start orbiting from spawn angle
     shapeRadii.push(xzRadius); // Lock in XZ radius so orbit path never drifts
+    shapeBaseY.push(y); // save the Y position so pulse never drifts
     shapeHues.push(Math.random()); // Random starting hue for each star
 
     // 3) Add the star to the scene and to the shapes array for later reference
