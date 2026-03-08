@@ -303,6 +303,7 @@ function populateScene() {
 
     // 2) Choose what type of scene to create
     createSphereScene(star);
+    // createRingScene(star);
   }
 }
 
@@ -322,6 +323,27 @@ function createSphereScene(star: THREE.Mesh){
   shapeAngles.push(horizontalAngle); // Start orbiting from spawn angle
   shapeRadii.push(xzRadius); // Lock in XZ radius so orbit path never drifts
   shapeBaseY.push(y); // save the Y position so pulse never drifts
+  shapeHues.push(Math.random()); // Random starting hue for each star
+
+  // 3) Add the star to the scene and to the shapes array for later reference
+  shapes.push(star);
+  scene.add(star);
+}
+
+function createRingScene(star: THREE.Mesh) {
+  // 1) Place star at a random position around a flat ring
+  const horizontalAngle = Math.random() * Math.PI * 2; // Random angle around the Y axis (0 to 360°)
+  const ringRadius = (starSpread / 2) * (0.7 + Math.random() * 0.3); // Random radius within outer 30% of spread (keeps ring thick but not too wide)
+  const y = THREE.MathUtils.randFloatSpread(starSpread * 0.1); // Small Y variation to give the ring slight depth
+
+  const x = ringRadius * Math.cos(horizontalAngle);
+  const z = ringRadius * Math.sin(horizontalAngle);
+  star.position.set(x, y, z);
+
+  // 2) Store the star's properties for later use in reactions
+  shapeAngles.push(horizontalAngle); // Start orbiting from spawn angle
+  shapeRadii.push(ringRadius); // Lock in XZ radius so orbit path never drifts
+  shapeBaseY.push(y); // Save the Y position so pulse never drifts
   shapeHues.push(Math.random()); // Random starting hue for each star
 
   // 3) Add the star to the scene and to the shapes array for later reference
