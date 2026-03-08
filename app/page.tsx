@@ -5,7 +5,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { useEffect, useState } from "react";
 import { initScene } from "../lib/scene/threeSetup"; // Three.js setup
-import { createCube, createStar } from "../lib/scene/geometry"; // Shapes to add to the scene
+import { createStar } from "../lib/scene/geometry"; // Shapes to add to the scene
 import { 
   uploadFile, 
   playAudio,
@@ -14,9 +14,7 @@ import {
   getIsPlaying,
   getFileName,
   clearAudioData,
-  getBass,
   getMid,
-  getTreble,
   getSmoothedBass,
   getPlaybackTime
 } from "../lib/audio"; // For handling audio files
@@ -62,7 +60,7 @@ export default function Home() {
     composer = init.composer;
     controls = init.controls;
 
-    debugSetup(); // For testing only, will be removed in the future
+    //debugSetup(); // For testing only
     populateScene(); // Populate the scene with stars
 
     animate(); // Start the animation loop
@@ -235,7 +233,6 @@ function animate() {
 function shapeReactions(){
   // 1) Get real-time audio data
   const mid = getMid(); // 0-255
-  const treble = getTreble(); // 0-255
 
   // 2) Smooth the bass value for more gradual pulsing
   let smoothedBass = getSmoothedBass();
@@ -255,26 +252,19 @@ function shapeReactions(){
 
 /** Handle shape colors based on Mid frequencies. If no audio is present, randomly change colors over time */
 function handleShapeColors(shape: THREE.Mesh, index: number, mid: number | null) {
-  if(mid === null) { // If a Mid is not present in the audio randomly change color
-    shapeHues[index] += 0.001; // Increment hue slowly
-    if (shapeHues[index] > 1) shapeHues[index] = 0; // Wrap around at 1
+  // 1) Determine hue: cycle slowly when no audio, map from mid when playing
+  let hue: number;
+  if (mid === null) {
+    shapeHues[index] = (shapeHues[index] + 0.001) % 1; // Increment and wrap at 1
+    hue = shapeHues[index];
+  } else {
+    hue = mid / 255; // Map mid (0-255) to hue (0-1)
+  }
 
-    // Update the star color and children to it
-    const hue = shapeHues[index];
-    (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-    for (let i = 0; i < shape.children.length; i++) {
-      ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-    }
-  } 
-  else{ // If a Mid is present in the audio react to it
-    // Map mid (0-255) to hue (0-1)
-    const hue = mid / 255;
-    
-    // Update both star and children to it
-    (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-    for (let i = 0; i < shape.children.length; i++) {
-      ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-    }
+  // Apply hue to star and its children
+  (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
+  for (let i = 0; i < shape.children.length; i++) {
+    ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
   }
 }
 
