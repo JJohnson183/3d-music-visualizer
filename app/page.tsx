@@ -22,6 +22,7 @@ let renderer: THREE.WebGLRenderer;
 
 let shapes: THREE.Mesh[] = []; // All shapes in the scene
 let shapeHues: number[] = []; // Color hue for each shape (0-1)
+let shapeAngles: number[] = []; // Current orbit angle for each shape (radians), derived from spawn position
 
 // Camera parameters
 let controls: OrbitControls; // For user interaction with the scene (e.g., zoom, pan, rotate)
@@ -29,6 +30,7 @@ let controls: OrbitControls; // For user interaction with the scene (e.g., zoom,
 // Star parameters
 let starCount = 300; // Number of stars to populate the scene with
 let starSpread = 100; // The range in which to randomly place the stars (e.g., -25 to 25 on each axis)
+let starOrbitSpeed = 0.0005; // How fast the stars orbit around their center in radians per frame
 //=====================//
 
 
@@ -134,6 +136,9 @@ function shapeReactions(){
     
     //===== Color (Mid) =====//
     handleShapeColors(shape, index, mid);
+
+    // Constant orbit
+    handleShapeOrbit(shape, index);
   });
 }
 
@@ -162,6 +167,19 @@ function handleShapeColors(shape: THREE.Mesh, index: number, mid: number | null)
   }
 }
 
+function handleShapeOrbit(shape: THREE.Mesh, index: number) {
+  // 1) Get current radius from center (0, 0, 0) in the XZ plane to always orbit around the center. 
+  //    Use Pythagorean theorem (Wow) to get the radius from the shape's current position
+  const radius = Math.sqrt(shape.position.x ** 2 + shape.position.z ** 2);
+
+  // 2) Increment the angle each frame
+  shapeAngles[index] += starOrbitSpeed; 
+
+  // 3) Orbit around (0, 0, 0) at the current radius.
+  shape.position.x = Math.cos(shapeAngles[index]) * radius;
+  shape.position.z = Math.sin(shapeAngles[index]) * radius;
+}
+
 // Add the stars to the scene at random positions
 function populateScene() {
   for (let i = 0; i < starCount; i++) {
@@ -170,8 +188,12 @@ function populateScene() {
     // Get random x, y, and z positions in the range of -25 to 25
     const [x, y, z] = Array(3).fill(0).map(() => THREE.MathUtils.randFloatSpread(starSpread));
     star.position.set(x, y, z);
+    
+    // Get the inital angle from (0, 0, 0) to the star's position in the XZ (horizontal) plane to use as the starting point for orbiting
+    shapeAngles.push(Math.atan2(z, x));
 
-    shapeHues.push(Math.random()); // Random starting hue for each star
+    // Random starting hue for each star
+    shapeHues.push(Math.random());
 
     shapes.push(star);
     scene.add(star);
