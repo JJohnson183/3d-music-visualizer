@@ -8,6 +8,9 @@ import { createCube, createStar } from "../lib/scene/geometry"; // Shapes to add
 import { 
   uploadFile, 
   playAudio,
+  stopAudio,
+  resumeAudio,
+  getIsPlaying,
   clearAudioData,
   getBass,
   getMid,
@@ -129,6 +132,21 @@ function reactionInfoContent(){
   );
 }
 
+/** Renders the pause/resume toggle button below the playback bar */
+function playbackControlsContent() {
+  return (
+    <div className="flex justify-center mt-2">
+      <button
+        id="playback-toggle-btn"
+        onClick={onPlaybackToggle}
+        className="px-4 py-1 text-sm bg-white/20 hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+      >
+        ▶
+      </button>
+    </div>
+  );
+}
+
 function menuContent(){
   return (
     <div className="mt-4 bg-white/50 p-4">
@@ -165,6 +183,9 @@ function menuContent(){
         </div>
       </div>
 
+      {/* Playback Controls */}
+      { playbackControlsContent() }
+
       {/* Reaction Info */}
       { reactionInfoContent() }
 
@@ -187,12 +208,13 @@ function menuContent(){
 
 //=============================================================//
 //===================== Scene Helpers =========================//
-// Animation loop to continuously render the scene
+/** Animation loop to continuously render the scene and update things every frame */
 function animate() {
   requestAnimationFrame(animate); // Request the next frame to keep the animation going
 
   if (showPerfMonitor) debugPerformanceMonitor();
   updatePlaybackBar();
+  updatePlaybackControls();
 
   shapeReactions(); // Update how the shapes react to the audio data
 
@@ -332,7 +354,7 @@ async function onFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
 
 //==========================================================//
 //===================== Helpers ============================//
-/** Update the playback bar UI directly via DOM to avoid 60fps React re-renders */
+/** Update the playback bar UI with an id reference. (Avoids rerendering react elements 60 times per second) */
 function updatePlaybackBar() {
   // 1) Get current playback time and total duration from the audio controller
   const { current, total } = getPlaybackTime();
@@ -348,6 +370,26 @@ function updatePlaybackBar() {
   if (fillElement) fillElement.style.width = `${progressPercent}%`;
   if (currentTimeElement) currentTimeElement.textContent = formatTime(current);
   if (totalTimeElement) totalTimeElement.textContent = formatTime(total);
+}
+
+/** Update the pause/resume button state with an id reference. (Avoids rerendering react elements 60 times per second) */
+function updatePlaybackControls() {
+  // 1) Get total duration to check if audio is loaded
+  const { total } = getPlaybackTime();
+
+  // 2) Get the playback toggle button by id 
+  const btn = document.getElementById('playback-toggle-btn') as HTMLButtonElement | null;
+  if (!btn) return;
+
+  // 3) Enable the button if audio is loaded, disable if not. Set text to ⏸ when playing and ▶ when paused
+  const audioLoaded = total > 0;
+  btn.disabled = !audioLoaded; // Disable when no audio is loaded
+  btn.textContent = getIsPlaying() ? '\u23F8' : '\u25B6'; // ⏸ when playing, ▶ when paused
+}
+
+/** Toggle between pause and resume */
+function onPlaybackToggle() {
+  getIsPlaying() ? stopAudio() : resumeAudio();
 }
 
 /** Format seconds into M:SS (e.g. 73 → "1:13") */

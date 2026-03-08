@@ -157,6 +157,16 @@ export function stopAudio() {
     isPlaying = false; // Mark as not playing
 }
 
+export function resumeAudio() {
+    if (!audioController) return;
+    audioController.resume();
+    isPlaying = true;
+}
+
+export function getIsPlaying(): boolean {
+    return isPlaying;
+}
+
 /** Get the current playback position and total duration in seconds */
 export function getPlaybackTime(): { current: number, total: number } {
     if (!audioController || !audioData) return { current: 0, total: 0 };
