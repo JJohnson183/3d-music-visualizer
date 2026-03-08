@@ -10,6 +10,8 @@ let frequencyData: Uint8Array | null = null; // Stores current frequency data (0
 
 const fftSize = 256; // Number of frequency bins for analysis (must be a power of 2, e.g. 256, 512, 1024)
 
+let playbackStartTime: number = 0; // AudioContext time when the current play started, used to calculate progress
+
 //======= Getters & Setters =======//
 // Get or create the AudioContext for the app
 const getAudioContext = () => {
@@ -141,12 +143,24 @@ export function playAudio() {
     analyzer.connect(audioCtrl.destination);
     
     // 4) Start playing the audio and set it to loop when it ends
+    playbackStartTime = audioCtrl.currentTime; // Record when playback started to track progress
     source.start(0);
     source.onended = () => {playAudio();}; // Loop when the audio reaches the end
 }
 
 export function stopAudio() {
     getAudioContext().suspend(); // Suspend the audio context to stop all audio playback
+}
+
+/** Get the current playback position and total duration in seconds */
+export function getPlaybackTime(): { current: number, total: number } {
+    if (!audioController || !audioData) return { current: 0, total: 0 };
+
+    const elapsed = audioController.currentTime - playbackStartTime;
+    return {
+        current: Math.min(elapsed, audioData.duration), // Ensure current time does not exceed total duration for timing issues when looping
+        total: audioData.duration
+    };
 }
 
 //==========================================================//
@@ -156,6 +170,7 @@ export function clearAudioData(){
     analyser = null; // Clear the analyser
     frequencyData = null; // Clear the frequency data
     smoothedBass = 0; // Reset smoothed bass to default
+    playbackStartTime = 0; // Reset playback start time
 
     if(audioController && audioController.state !== "closed") {
         audioController.close(); // Close the audio context to stop any playing audio and free memory

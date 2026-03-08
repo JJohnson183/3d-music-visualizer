@@ -12,7 +12,8 @@ import {
   getBass,
   getMid,
   getTreble,
-  getSmoothedBass
+  getSmoothedBass,
+  getPlaybackTime
 } from "../lib/audio"; // For handling audio files
 
 //=================//
@@ -86,46 +87,62 @@ export default function Home() {
       </button>
 
       {/* Menu Content */}
-      {menuOpen && ( // Only show the menu content if the menu is open
-        <div className="mt-4 bg-white/50 p-4">
-
-          {/* Title */}
-          <h1 className="text-xl font-bold mb-2">
-            3D Particle Music Visualizer
-          </h1>
-
-          {/* MP3 add button */}
-          <div className="space-y-2 text-sm">
-            <p>Upload MP3 Here</p>
-            <input 
-              type="file" 
-              accept="audio/mp3,audio/mpeg"
-              className="block w-full text-sm text-gray-900 bg-gray-50 rounded border border-gray-300 cursor-pointer focus:outline-none"
-              // Clear and reset data on click
-              onClick={(event) => onFileInputClick(event)}
-              // Process audio file on selection
-              onChange={async (event) => await onFileUpload(event)}
-            />
-          </div>
-
-          {/* Credits */}
-          <div className="mt-4 flex items-center gap-2 text-xs">
-            <span>Made by Jordan S. Johnson</span>
-            <a 
-              href="https://github.com/JJohnson183/3d-music-visualizer" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:opacity-70 transition-opacity"
-              aria-label="View on GitHub"
-            >
-              <img src="/github.svg" alt="GitHub" className="w-4 h-4" />
-            </a>
-          </div>
-
-        </div>
-      )}
+      {menuOpen && ( menuContent() )} 
     </div>
     </>
+  );
+}
+
+function menuContent(){
+  return (
+    <div className="mt-4 bg-white/50 p-4">
+      {/* Title */}
+      <h1 className="text-xl font-bold mb-2">
+        3D Particle Music Visualizer
+      </h1>
+
+      {/* MP3 add button */}
+      <div className="space-y-2 text-sm">
+        <p>Upload MP3 Here</p>
+        <input 
+          type="file" 
+          accept="audio/mp3,audio/mpeg"
+          className="block w-full text-sm text-gray-900 bg-gray-50 rounded border border-gray-300 cursor-pointer focus:outline-none"
+          // Clear and reset data on click
+          onClick={(event) => onFileInputClick(event)}
+          // Process audio file on selection
+          onChange={async (event) => await onFileUpload(event)}
+        />
+      </div>
+
+      {/* Playback Bar */}
+      <div className="mt-4 space-y-1">
+        {/* Progress bar track */}
+        <div className="w-full h-1.5 bg-white/30 rounded-full overflow-hidden">
+          <div id="playback-fill" className="h-full bg-white rounded-full transition-none" style={{width: '0%'}}></div>
+        </div>
+
+        {/* Time display */}
+        <div className="flex justify-between text-xs font-mono text-white/80">
+          <span id="playback-current">0:00</span>
+          <span id="playback-total">0:00</span>
+        </div>
+      </div>
+
+      {/* Credits */}
+      <div className="mt-4 flex items-center gap-2 text-xs">
+        <span>Made by Jordan S. Johnson</span>
+        <a 
+          href="https://github.com/JJohnson183/3d-music-visualizer" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="hover:opacity-70 transition-opacity"
+          aria-label="View on GitHub"
+        >
+          <img src="/github.svg" alt="GitHub" className="w-4 h-4" />
+        </a>
+      </div>
+    </div>
   );
 }
 
@@ -136,6 +153,7 @@ function animate() {
   requestAnimationFrame(animate); // Request the next frame to keep the animation going
 
   if (showPerfMonitor) debugPerformanceMonitor();
+  updatePlaybackBar();
 
   shapeReactions(); // Update how the shapes react to the audio data
 
@@ -269,7 +287,64 @@ async function onFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
 }
 
 //==========================================================//
-//===================== Cleanup & Helpers ============================//
+//===================== Helpers ============================//
+/** Update the playback bar UI directly via DOM to avoid 60fps React re-renders */
+function updatePlaybackBar() {
+  // 1) Get current playback time and total duration from the audio controller
+  const { current, total } = getPlaybackTime();
+  
+  // 2) Calculate progress as a percentage (0-100) for the progress bar fill
+  const progressPercent = total > 0 ? (current / total) * 100 : 0;
+
+  // 3) Update the progress bar fill width and time displays directly with id refrences where found
+  const fillElement = document.getElementById('playback-fill');
+  const currentTimeElement = document.getElementById('playback-current');
+  const totalTimeElement = document.getElementById('playback-total');
+
+  if (fillElement) fillElement.style.width = `${progressPercent}%`;
+  if (currentTimeElement) currentTimeElement.textContent = formatTime(current);
+  if (totalTimeElement) totalTimeElement.textContent = formatTime(total);
+}
+
+/** Format seconds into M:SS (e.g. 73 → "1:13") */
+function formatTime(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+
+  // Pad seconds with leading zero (e.g. 1:5 -> 1:05)
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+function debugSetup() {
+  const gridhelper = new THREE.GridHelper(50, 10);
+  scene.add(gridhelper);
+}
+
+// Performance monitor state (only used when showPerfMonitor is true)
+let _frameCount = 0;
+let _lastFpsTime = performance.now();
+
+function debugPerformanceMonitor() {
+  _frameCount++;
+  const now = performance.now();
+
+  // Update FPS every second
+  if (now - _lastFpsTime >= 1000) {
+    // Calculate FPS as the number of frames since the last update divided by the time elapsed in seconds
+    const fps = Math.round(_frameCount * 1000 / (now - _lastFpsTime));
+
+    // Update the FPS counter element
+    const el = document.getElementById('fps-counter');
+    if (el) el.textContent = `${fps} FPS`;
+
+    // Reset frame count and last update time for the next calculation
+    _frameCount = 0;
+    _lastFpsTime = now;
+  }
+}
+
+//==========================================================//
+//===================== Cleanup ============================//
 function disposeScene() {
   shapes.forEach((shape) => {
     shape.geometry.dispose(); // Dispose of the geometry
@@ -302,32 +377,4 @@ function resetShapes(){
     const z = Math.sin(shapeAngles[index]) * shapeRadii[index];
     shape.position.set(x, shape.position.y, z);
   });
-}
-
-function debugSetup() {
-  const gridhelper = new THREE.GridHelper(50, 10);
-  scene.add(gridhelper);
-}
-
-// Performance monitor state (only used when showPerfMonitor is true)
-let _frameCount = 0;
-let _lastFpsTime = performance.now();
-
-function debugPerformanceMonitor() {
-  _frameCount++;
-  const now = performance.now();
-
-  // Update FPS every second
-  if (now - _lastFpsTime >= 1000) {
-    // Calculate FPS as the number of frames since the last update divided by the time elapsed in seconds
-    const fps = Math.round(_frameCount * 1000 / (now - _lastFpsTime));
-
-    // Update the FPS counter element
-    const el = document.getElementById('fps-counter');
-    if (el) el.textContent = `${fps} FPS`;
-
-    // Reset frame count and last update time for the next calculation
-    _frameCount = 0;
-    _lastFpsTime = now;
-  }
 }
