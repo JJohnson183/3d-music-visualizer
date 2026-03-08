@@ -93,6 +93,41 @@ export default function Home() {
   );
 }
 
+function reactionInfoContent(){
+  return (
+    <div className="mt-4 pt-3 border-t border-white/20 space-y-2 text-xs text-white/80">
+      <p className="font-semibold text-white">Reactions</p>
+
+      {/* Bass - Pulse */}
+      <div className="flex items-center gap-2">
+        <span className="w-14 shrink-0">Pulse</span>
+        <span className="text-white/50">Stars expand with bass</span>
+      </div>
+
+      {/* Mid - Color */}
+      <div className="flex items-start gap-2">
+        <span className="w-14 shrink-0 mt-1">Color</span>
+        <div className="flex-1 space-y-1">
+          
+          {/* Gradient bar */}
+          <div
+            className="w-full h-2 rounded"
+            style={{ background: 'linear-gradient(to right, hsl(0,100%,50%), hsl(60,100%,50%), hsl(120,100%,50%), hsl(180,100%,50%), hsl(240,100%,50%), hsl(300,100%,50%))' }}
+          />
+
+          {/* Labels below gradient */}
+          <div className="flex justify-between text-white/40" style={{ fontSize: '10px' }}>
+            <span>Low mids</span>
+            <span>High mids</span>
+          </div>
+          
+        </div>
+      </div>
+      <p className="text-white/40 text-xs">No audio - colors cycle automatically</p>
+    </div>
+  );
+}
+
 function menuContent(){
   return (
     <div className="mt-4 bg-white/50 p-4">
@@ -128,6 +163,9 @@ function menuContent(){
           <span id="playback-total">0:00</span>
         </div>
       </div>
+
+      {/* Reaction Info */}
+      { reactionInfoContent() }
 
       {/* Credits */}
       <div className="mt-4 flex items-center gap-2 text-xs">
