@@ -8,12 +8,12 @@ A real-time 3D music visualizer built with Three.js and the Web Audio API. Uploa
 
 ## Features
 
-- **Audio-Reactive** — Bass drives 3D pulse, mid frequencies drive color shifts
-- **Bloom Glow** — Post-processing using `UnrealBloomPass`
-- **Idle Animation** — Rainbow color cycle when no audio is loaded
-- **Playback Controls** — Pause/resume, progress bar, track name, and timestamps
-- **Free Camera** — Orbit, zoom, and pan freely around the scene
-- **Optimized** — 300 particles rendered in 2 GPU draw calls via `InstancedMesh`
+- **Audio-Reactive** - Bass drives 3D pulse, mid frequencies drive color shifts
+- **Bloom Glow** - Post-processing using `UnrealBloomPass`
+- **Idle Animation** - Rainbow color cycle when no audio is loaded
+- **Playback Controls** - Pause/resume, progress bar, track name, and timestamps
+- **Free Camera** - Orbit, zoom, and pan freely around the scene
+- **Optimized** - 300 particles rendered in 2 GPU draw calls via `InstancedMesh`
 
 ## How It Works
 

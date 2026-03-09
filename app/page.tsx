@@ -42,7 +42,7 @@ let composer: EffectComposer; // Post-processing composer for bloom effect
 // Star parameters
 let starCount = 300; // Number of stars to populate the scene with
 let starSpread = 100; // The range in which to randomly place the stars (e.g., -25 to 25 on each axis)
-let starOrbitSpeed = 0.0005; // How fast the stars orbit around their center in radians per frame
+let starOrbitSpeed = 0.001; // How fast the stars orbit around their center in radians per frame
 let starPulseIntensity = 1.5; // How much the stars pulse in response to the bass frequencies (mutiplier for radius)
 
 
