@@ -43,20 +43,25 @@ export function shapeReactions(ctx: ReactionContext){
 
 /** Handle shape colors based on Mid frequencies. If no audio is present, randomly change colors over time */
 function handleShapeColors(shape: THREE.Mesh, index: number, mid: number | null, ctx: ReactionContext) {
-  // 1) Determine hue: cycle slowly when no audio, map from mid when playing
-  let hue: number;
-  if (mid === null) {
-    ctx.shapeHues[index] = (ctx.shapeHues[index] + 0.001) % 1; // Increment and wrap at 1
-    hue = ctx.shapeHues[index];
-  } else {
-    hue = mid / 255; // Map mid (0-255) to hue (0-1)
-  }
+    const prevHue = ctx.shapeHues[index];
 
-  // Apply hue to star and its children
-  (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-  for (let i = 0; i < shape.children.length; i++) {
-    ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-  }
+    // 1) Determine hue: cycle slowly when no audio, map from mid when playing
+    let hue: number;
+    if (mid === null) {
+        ctx.shapeHues[index] = (ctx.shapeHues[index] + 0.001) % 1; // Increment and wrap at 1
+        hue = ctx.shapeHues[index];
+    } else {
+        hue = mid / 255; // Map mid (0-255) to hue (0-1)
+    }
+
+	// 2) Skip if hue hasn't changed to avoid unnecessary updates
+	if (hue === prevHue) return;
+
+    // 3) Apply hue to star and its children
+    (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
+    for (let i = 0; i < shape.children.length; i++) {
+        ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
+    }
 }
 
 /** Handle shape orbiting around the center of the scene */
