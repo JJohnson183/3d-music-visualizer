@@ -8,6 +8,7 @@ import { initScene } from "../lib/scene/threeSetup"; // Three.js setup
 import { createStar } from "../lib/scene/geometry"; // Shapes to add to the scene
 import { computeSpherePlacement, computeRingPlacement } from "../lib/scene/placements"; // Placement math for scene layouts
 import { shapeReactions } from "../lib/scene/reactions"; // Audio reaction logic
+import { formatTime } from "../lib/utils"; // Utility functions
 import Menu from "../components/Menu"; // Menu UI component
 import { 
   uploadFile, 
@@ -236,15 +237,6 @@ function updatePlaybackControls() {
 /** Toggle between pause and resume */
 function onPlaybackToggle() {
   getIsPlaying() ? stopAudio() : resumeAudio();
-}
-
-/** Format seconds into M:SS (e.g. 73 → "1:13") */
-function formatTime(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-
-  // Pad seconds with leading zero (e.g. 1:5 -> 1:05)
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 function debugSetup() {
