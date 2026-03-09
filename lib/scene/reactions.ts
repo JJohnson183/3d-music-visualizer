@@ -25,11 +25,16 @@ export function shapeReactions(ctx: ReactionContext){
   
   // 3) Make stars react
   ctx.shapes.forEach((shape, index) => {
+    // Pre-compute trig for the next angle so orbit and pulse share the same values and reduce redundant calculations
+    const cos = Math.cos(ctx.shapeAngles[index] + ctx.starOrbitSpeed);
+    const sin = Math.sin(ctx.shapeAngles[index] + ctx.starOrbitSpeed);
+    ctx.shapeAngles[index] += ctx.starOrbitSpeed;
+
     // Constant orbit (Must be done before pulse so the pulse sets on the new new angle set by the orbit)
-    handleShapeOrbit(shape, index, ctx);
+    handleShapeOrbit(shape, index, cos, sin, ctx);
 
     //===== Position from center (bass) =====//
-    handleShapePulse(shape, index, smoothedBass, ctx);
+    handleShapePulse(shape, index, smoothedBass, cos, sin, ctx);
 
     //===== Color (Mid) =====//
     handleShapeColors(shape, index, mid, ctx);
@@ -55,26 +60,23 @@ function handleShapeColors(shape: THREE.Mesh, index: number, mid: number | null,
 }
 
 /** Handle shape orbiting around the center of the scene */
-function handleShapeOrbit(shape: THREE.Mesh, index: number, ctx: ReactionContext) {
-  // 1) Increment the shape's angle based on the defined orbit speed
-  ctx.shapeAngles[index] += ctx.starOrbitSpeed;
-
-  // 2) Update the shape's position based on its angle and radius to create an orbiting effect
-  shape.position.x = Math.cos(ctx.shapeAngles[index]) * ctx.shapeRadii[index];
-  shape.position.z = Math.sin(ctx.shapeAngles[index]) * ctx.shapeRadii[index];
+function handleShapeOrbit(shape: THREE.Mesh, index: number, cos: number, sin: number, ctx: ReactionContext) {
+  // Update the shape's position based on its angle and radius to create an orbiting effect (cos and sin are pre-computed)
+  shape.position.x = cos * ctx.shapeRadii[index];
+  shape.position.z = sin * ctx.shapeRadii[index];
 }
 
 /** Handle shape pulsing based on the bass frequencies. If no audio is present, do not pulse */
-function handleShapePulse(shape: THREE.Mesh, index: number, bass: number | null, ctx: ReactionContext) {
+function handleShapePulse(shape: THREE.Mesh, index: number, bass: number | null, cos: number, sin: number, ctx: ReactionContext) {
   if (bass === null) return;
 
   // 1) Calculate pulse amount based on bass level. (1 to 1 + starPulseIntensity)
   const pulseAmount = 1 + (bass / 255) * ctx.starPulseIntensity;
 
   // 2) Get the star's stable 3D base position and pulse outward along its full direction
-  const baseX = Math.cos(ctx.shapeAngles[index]) * ctx.shapeRadii[index];
+  const baseX = cos * ctx.shapeRadii[index];
   const baseY = ctx.shapeBaseY[index];
-  const baseZ = Math.sin(ctx.shapeAngles[index]) * ctx.shapeRadii[index];
+  const baseZ = sin * ctx.shapeRadii[index];
 
   shape.position.x = baseX * pulseAmount;
   shape.position.y = baseY * pulseAmount;
