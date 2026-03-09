@@ -9,6 +9,7 @@ import { createStar } from "../lib/scene/geometry"; // Shapes to add to the scen
 import { computeSpherePlacement, computeRingPlacement } from "../lib/scene/placements"; // Placement math for scene layouts
 import { shapeReactions } from "../lib/scene/reactions"; // Audio reaction logic
 import { formatTime } from "../lib/utils"; // Utility functions
+import { debugSetup, debugPerformanceMonitor } from "../lib/debug"; // For testing and debugging the scene
 import Menu from "../components/Menu"; // Menu UI component
 import { 
   uploadFile, 
@@ -62,7 +63,7 @@ export default function Home() {
     composer = init.composer;
     controls = init.controls;
 
-    //debugSetup(); // For testing only
+    //debugSetup(scene); // For testing only
     populateScene(); // Populate the scene with stars
 
     animate(); // Start the animation loop
@@ -237,34 +238,6 @@ function updatePlaybackControls() {
 /** Toggle between pause and resume */
 function onPlaybackToggle() {
   getIsPlaying() ? stopAudio() : resumeAudio();
-}
-
-function debugSetup() {
-  const gridhelper = new THREE.GridHelper(50, 10);
-  scene.add(gridhelper);
-}
-
-// Performance monitor state (only used when showPerfMonitor is true)
-let _frameCount = 0;
-let _lastFpsTime = performance.now();
-
-function debugPerformanceMonitor() {
-  _frameCount++;
-  const now = performance.now();
-
-  // Update FPS every second
-  if (now - _lastFpsTime >= 1000) {
-    // Calculate FPS as the number of frames since the last update divided by the time elapsed in seconds
-    const fps = Math.round(_frameCount * 1000 / (now - _lastFpsTime));
-
-    // Update the FPS counter element
-    const el = document.getElementById('fps-counter');
-    if (el) el.textContent = `${fps} FPS`;
-
-    // Reset frame count and last update time for the next calculation
-    _frameCount = 0;
-    _lastFpsTime = now;
-  }
 }
 
 //==========================================================//
