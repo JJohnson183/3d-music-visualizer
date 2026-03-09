@@ -5,7 +5,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { useEffect, useState } from "react";
 import { initScene } from "../lib/scene/threeSetup"; // Three.js setup
-import { createStar } from "../lib/scene/geometry"; // Shapes to add to the scene
+import { createStarInstances } from "../lib/scene/geometry"; // Shapes to add to the scene
 import { computeSpherePlacement, computeRingPlacement } from "../lib/scene/placements"; // Placement math for scene layouts
 import { shapeReactions } from "../lib/scene/reactions"; // Audio reaction logic
 import { formatTime } from "../lib/utils"; // Utility functions
@@ -28,7 +28,8 @@ let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
 
-let shapes: THREE.Mesh[] = []; // All shapes in the scene
+let starMesh: THREE.InstancedMesh; // Instanced mesh for all stars
+let glowMesh: THREE.InstancedMesh; // Instanced mesh for all star glows
 let shapeHues: number[] = []; // Color hue for each shape (0-1)
 let shapeAngles: number[] = []; // Orbit angle per shape (radians), incremented each frame
 let shapeRadii: number[] = []; // Spawn radius per shape, kept fixed so orbit path never drifts
@@ -44,6 +45,9 @@ let starSpread = 100; // The range in which to randomly place the stars (e.g., -
 let starOrbitSpeed = 0.0005; // How fast the stars orbit around their center in radians per frame
 let starPulseIntensity = 1.5; // How much the stars pulse in response to the bass frequencies (mutiplier for radius)
 
+
+// Reusable matrix to avoid per-frame allocation in populateScene and resetShapes
+const _matrix = new THREE.Matrix4();
 
 //=====================//
 
@@ -119,7 +123,7 @@ function animate() {
   updatePlaybackControls();
 
   // Update how the shapes react to the audio data
-  shapeReactions({ shapes, shapeHues, shapeAngles, shapeRadii, shapeBaseY, starOrbitSpeed, starPulseIntensity });
+  shapeReactions({ starMesh, glowMesh, shapeHues, shapeAngles, shapeRadii, shapeBaseY, starOrbitSpeed, starPulseIntensity });
 
   controls.update(); // To ensure the control changes are shown in the scene
   composer.render(); // Render using the post-processing composer that applies bloom
@@ -127,46 +131,68 @@ function animate() {
 
 // Add the stars to the scene at random positions and store their properties for later use in reactions
 function populateScene() {
-  for (let i = 0; i < starCount; i++) {
-    // 1) Create the star
-    const star = createStar();
+  // 1) Create instanced meshes for stars and glow
+  const instances = createStarInstances(starCount);
+  starMesh = instances.starMesh;
+  glowMesh = instances.glowMesh;
+  scene.add(starMesh);
+  scene.add(glowMesh);
 
-    // 2) Choose what type of scene to create
-    createSphereScene(star);
-    // createRingScene(star);
+  // 2) Place each star and store properties
+  for (let i = 0; i < starCount; i++) {
+    createSphereScene(i);
+    // createRingScene(i);
   }
+
+  // 3) Tell Three.js to update the instance colors and matrices on the GPU after initial placement
+  starMesh.instanceMatrix.needsUpdate = true;
+  glowMesh.instanceMatrix.needsUpdate = true;
+  if (starMesh.instanceColor) starMesh.instanceColor.needsUpdate = true;
+  if (glowMesh.instanceColor) glowMesh.instanceColor.needsUpdate = true;
 }
 
-function createSphereScene(star: THREE.Mesh){
+function createSphereScene(index: number){
   // 1) Compute a random position inside a sphere
   const { position, angle, radius, baseY } = computeSpherePlacement(starSpread);
-  star.position.copy(position);
 
   // 2) Store the star's properties for later use in reactions
   shapeAngles.push(angle);
   shapeRadii.push(radius);
   shapeBaseY.push(baseY);
-  shapeHues.push(Math.random());
 
-  // 3) Add the star to the scene and to the shapes array for later reference
-  shapes.push(star);
-  scene.add(star);
+  // 3) Set initial random color
+  const hue = Math.random();
+  const color = new THREE.Color().setHSL(hue, 1, 0.5);
+  starMesh.setColorAt(index, color);
+  glowMesh.setColorAt(index, color);
+  shapeHues.push(hue);
+
+  // 4) Set the initial position for this instance
+  _matrix.setPosition(position.x, position.y, position.z);
+  starMesh.setMatrixAt(index, _matrix);
+  glowMesh.setMatrixAt(index, _matrix);
 }
 
-function createRingScene(star: THREE.Mesh) {
+function createRingScene(index: number) {
   // 1) Compute a random position around a flat ring
   const { position, angle, radius, baseY } = computeRingPlacement(starSpread);
-  star.position.copy(position);
 
   // 2) Store the star's properties for later use in reactions
   shapeAngles.push(angle);
   shapeRadii.push(radius);
   shapeBaseY.push(baseY);
-  shapeHues.push(Math.random());
 
-  // 3) Add the star to the scene and to the shapes array for later reference
-  shapes.push(star);
-  scene.add(star);
+  // 3) Set initial random color
+  const hue = Math.random();
+  const color = new THREE.Color().setHSL(hue, 1, 0.5);
+  starMesh.setColorAt(index, color);
+  glowMesh.setColorAt(index, color);
+  shapeHues.push(hue);
+
+  // 4) Set the initial position for this instance
+  _matrix.setPosition(position.x, position.y, position.z);
+  starMesh.setMatrixAt(index, _matrix);
+  glowMesh.setMatrixAt(index, _matrix);
 }
 
 //=============================================================//
@@ -243,35 +269,38 @@ function onPlaybackToggle() {
 //==========================================================//
 //===================== Cleanup ============================//
 function disposeScene() {
-  shapes.forEach((shape) => {
-    shape.geometry.dispose(); // Dispose of the geometry
+  // Dispose of mesh instances and their materials to free up GPU memory 
+  starMesh.geometry.dispose();
+  (starMesh.material as THREE.Material).dispose();
 
-    if (shape.material instanceof THREE.Material) {
-      shape.material.dispose(); // Dispose of the material if it's a single material
-    } 
-    else if (Array.isArray(shape.material)) {
-      shape.material.forEach((mat) => mat.dispose()); // Dispose of each material if it's an array
-    }
-  });
+  glowMesh.geometry.dispose();
+  (glowMesh.material as THREE.Material).dispose();
 
   renderer.dispose(); // Dispose of the renderer
 }
 
 /** Reset shape properties to random default when audio is stopped or reset */
 function resetShapes(){
-  shapes.forEach((shape, index) => {
+  const color = new THREE.Color();
+
+  for (let index = 0; index < starCount; index++) {
     //=== Reset colors for star ===//
     shapeHues[index] = Math.random(); // Random starting hue for each star
-    const hue = shapeHues[index];
-
-    (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-    for (let i = 0; i < shape.children.length; i++) {
-      ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-    }
+    color.setHSL(shapeHues[index], 1, 0.5);
+    starMesh.setColorAt(index, color);
+    glowMesh.setColorAt(index, color);
 
     //=== Reset position for star ===//
     const x = Math.cos(shapeAngles[index]) * shapeRadii[index];
     const z = Math.sin(shapeAngles[index]) * shapeRadii[index];
-    shape.position.set(x, shape.position.y, z);
-  });
+    _matrix.setPosition(x, shapeBaseY[index], z);
+    starMesh.setMatrixAt(index, _matrix);
+    glowMesh.setMatrixAt(index, _matrix);
+  }
+
+  // Tell Three.js to update the instance colors and matrices on the GPU after resetting
+  if (starMesh.instanceColor) starMesh.instanceColor.needsUpdate = true;
+  if (glowMesh.instanceColor) glowMesh.instanceColor.needsUpdate = true;
+  starMesh.instanceMatrix.needsUpdate = true;
+  glowMesh.instanceMatrix.needsUpdate = true;
 }

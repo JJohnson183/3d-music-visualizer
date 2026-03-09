@@ -1,10 +1,15 @@
 import * as THREE from "three";
 import { getMid, getSmoothedBass } from "../audio";
 
+// Reusable objects to avoid per-frame allocation
+const _matrix = new THREE.Matrix4();
+const _color = new THREE.Color();
+
 //=============================================================//
 //=================== Reaction Context ========================//
 export interface ReactionContext {
-  shapes: THREE.Mesh[];
+  starMesh: THREE.InstancedMesh; // Instanced mesh for all stars
+  glowMesh: THREE.InstancedMesh; // Instanced mesh for all star glows
   shapeHues: number[];
   shapeAngles: number[];
   shapeRadii: number[];
@@ -21,69 +26,63 @@ export function shapeReactions(ctx: ReactionContext){
   const mid = getMid(); // 0-255
 
   // 2) Smooth the bass value for more gradual pulsing
-  let smoothedBass = getSmoothedBass();
-  
+  const smoothedBass = getSmoothedBass();
+
   // 3) Make stars react
-  ctx.shapes.forEach((shape, index) => {
+  for (let index = 0; index < ctx.shapeAngles.length; index++) {
     // Pre-compute trig for the next angle so orbit and pulse share the same values and reduce redundant calculations
     const cos = Math.cos(ctx.shapeAngles[index] + ctx.starOrbitSpeed);
     const sin = Math.sin(ctx.shapeAngles[index] + ctx.starOrbitSpeed);
     ctx.shapeAngles[index] += ctx.starOrbitSpeed;
 
-    // Constant orbit (Must be done before pulse so the pulse sets on the new new angle set by the orbit)
-    handleShapeOrbit(shape, index, cos, sin, ctx);
+    //===== Position (orbit + bass pulse) =====//
+    // Update position based on angle and radius to create an orbiting effect
+    let x = cos * ctx.shapeRadii[index];
+    let y = ctx.shapeBaseY[index];
+    let z = sin * ctx.shapeRadii[index];
 
-    //===== Position from center (bass) =====//
-    handleShapePulse(shape, index, smoothedBass, cos, sin, ctx);
+    if (smoothedBass !== null) {
+      // Calculate pulse amount based on bass level (1 to 1 + starPulseIntensity) and pulse outward along full 3D direction
+      const pulseAmount = 1 + (smoothedBass / 255) * ctx.starPulseIntensity;
+      x *= pulseAmount;
+      y *= pulseAmount;
+      z *= pulseAmount;
+    }
+
+    // Set the same matrix on both the star and glow instances
+    _matrix.setPosition(x, y, z);
+    ctx.starMesh.setMatrixAt(index, _matrix);
+    ctx.glowMesh.setMatrixAt(index, _matrix);
 
     //===== Color (Mid) =====//
-    handleShapeColors(shape, index, mid, ctx);
-  });
+    handleShapeColors(index, mid, ctx);
+  }
+
+  // 4) Flag both meshes for GPU upload
+  ctx.starMesh.instanceMatrix.needsUpdate = true;
+  ctx.glowMesh.instanceMatrix.needsUpdate = true;
+  if (ctx.starMesh.instanceColor) ctx.starMesh.instanceColor.needsUpdate = true;
+  if (ctx.glowMesh.instanceColor) ctx.glowMesh.instanceColor.needsUpdate = true;
 }
 
 /** Handle shape colors based on Mid frequencies. If no audio is present, randomly change colors over time */
-function handleShapeColors(shape: THREE.Mesh, index: number, mid: number | null, ctx: ReactionContext) {
-    const prevHue = ctx.shapeHues[index];
+function handleShapeColors(index: number, mid: number | null, ctx: ReactionContext) {
+  const prevHue = ctx.shapeHues[index];
 
-    // 1) Determine hue: cycle slowly when no audio, map from mid when playing
-    let hue: number;
-    if (mid === null) {
-        ctx.shapeHues[index] = (ctx.shapeHues[index] + 0.001) % 1; // Increment and wrap at 1
-        hue = ctx.shapeHues[index];
-    } else {
-        hue = mid / 255; // Map mid (0-255) to hue (0-1)
-    }
+  // 1) Determine hue: cycle slowly when no audio, map from mid when playing
+  let hue: number;
+  if (mid === null) {
+    ctx.shapeHues[index] = (ctx.shapeHues[index] + 0.001) % 1; // Increment and wrap at 1
+    hue = ctx.shapeHues[index];
+  } else {
+    hue = mid / 255; // Map mid (0-255) to hue (0-1)
+  }
 
-	// 2) Skip if hue hasn't changed to avoid unnecessary updates
-	if (hue === prevHue) return;
+  // 2) Skip if hue hasn't changed to avoid unnecessary updates
+  if (hue === prevHue) return;
 
-    // 3) Apply hue to star and its children
-    (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-    for (let i = 0; i < shape.children.length; i++) {
-        ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-    }
-}
-
-/** Handle shape orbiting around the center of the scene */
-function handleShapeOrbit(shape: THREE.Mesh, index: number, cos: number, sin: number, ctx: ReactionContext) {
-  // Update the shape's position based on its angle and radius to create an orbiting effect (cos and sin are pre-computed)
-  shape.position.x = cos * ctx.shapeRadii[index];
-  shape.position.z = sin * ctx.shapeRadii[index];
-}
-
-/** Handle shape pulsing based on the bass frequencies. If no audio is present, do not pulse */
-function handleShapePulse(shape: THREE.Mesh, index: number, bass: number | null, cos: number, sin: number, ctx: ReactionContext) {
-  if (bass === null) return;
-
-  // 1) Calculate pulse amount based on bass level. (1 to 1 + starPulseIntensity)
-  const pulseAmount = 1 + (bass / 255) * ctx.starPulseIntensity;
-
-  // 2) Get the star's stable 3D base position and pulse outward along its full direction
-  const baseX = cos * ctx.shapeRadii[index];
-  const baseY = ctx.shapeBaseY[index];
-  const baseZ = sin * ctx.shapeRadii[index];
-
-  shape.position.x = baseX * pulseAmount;
-  shape.position.y = baseY * pulseAmount;
-  shape.position.z = baseZ * pulseAmount;
+  // 3) Apply hue to star and glow instances
+  _color.setHSL(hue, 1, 0.5);
+  ctx.starMesh.setColorAt(index, _color);
+  ctx.glowMesh.setColorAt(index, _color);
 }

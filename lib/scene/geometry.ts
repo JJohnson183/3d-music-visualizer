@@ -1,24 +1,20 @@
 import * as THREE from "three";
 
+/** Create multiple star instances (Not full individual meshes) */
+export function createStarInstances(count: number): { starMesh: THREE.InstancedMesh, glowMesh: THREE.InstancedMesh } {
+    const starSize = 0.4;
 
-export function createCube() {
-    const geometry = new THREE.BoxGeometry(1, 1, 1); // Define the shape of the object
-    const material = new THREE.MeshBasicMaterial({ color: 0xFF6347, wireframe: true }); // Define the material of the object
-    const cube = new THREE.Mesh(geometry, material); // Create the full shape by combining the geometry and material
-    return cube;
-}
+    // Star instanced mesh
+    const starGeometry = new THREE.SphereGeometry(starSize, 8, 8);
+    const starMaterial = new THREE.MeshBasicMaterial();
+    const starMesh = new THREE.InstancedMesh(starGeometry, starMaterial, count);
+    starMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); // Updated every frame
 
-export function createStar() {
-    // Create star
-    const size = 0.4; // Size of the star 
-    const geometry = new THREE.SphereGeometry(size, 8, 8);
-    const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-    const star = new THREE.Mesh(geometry, material);
+    // Glow instanced mesh (larger, semi-transparent. Acts as child mesh for bloom effect)
+    const glowGeometry = new THREE.SphereGeometry(starSize * 1.5, 8, 8);
+    const glowMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5 });
+    const glowMesh = new THREE.InstancedMesh(glowGeometry, glowMaterial, count);
+    glowMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); // Updated every frame
 
-    // Add glow
-    const glowMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 });
-    const glow = new THREE.Mesh(new THREE.SphereGeometry(size * 1.5, 8, 8), glowMaterial);
-    star.add(glow);
-
-    return star;
+    return { starMesh, glowMesh };
 }
