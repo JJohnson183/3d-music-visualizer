@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { initScene } from "../lib/scene/threeSetup"; // Three.js setup
 import { createStar } from "../lib/scene/geometry"; // Shapes to add to the scene
 import { computeSpherePlacement, computeRingPlacement } from "../lib/scene/placements"; // Placement math for scene layouts
+import { shapeReactions } from "../lib/scene/reactions"; // Audio reaction logic
 import Menu from "../components/Menu"; // Menu UI component
 import { 
   uploadFile, 
@@ -16,8 +17,6 @@ import {
   getIsPlaying,
   getFileName,
   clearAudioData,
-  getMid,
-  getSmoothedBass,
   getPlaybackTime
 } from "../lib/audio"; // For handling audio files
 
@@ -117,76 +116,11 @@ function animate() {
   updatePlaybackBar();
   updatePlaybackControls();
 
-  shapeReactions(); // Update how the shapes react to the audio data
+  // Update how the shapes react to the audio data
+  shapeReactions({ shapes, shapeHues, shapeAngles, shapeRadii, shapeBaseY, starOrbitSpeed, starPulseIntensity });
 
   controls.update(); // To ensure the control changes are shown in the scene
   composer.render(); // Render using the post-processing composer that applies bloom
-}
-
-/** Defines how the shapes react to the audio data */
-function shapeReactions(){
-  // 1) Get real-time audio data
-  const mid = getMid(); // 0-255
-
-  // 2) Smooth the bass value for more gradual pulsing
-  let smoothedBass = getSmoothedBass();
-  
-  // 3) Make stars react
-  shapes.forEach((shape, index) => {
-    // Constant orbit (Must be done before pulse so the pulse sets on the new new angle set by the orbit)
-    handleShapeOrbit(shape, index);
-
-    //===== Position from center (bass) =====//
-    handleShapePulse(shape, index, smoothedBass);
-
-    //===== Color (Mid) =====//
-    handleShapeColors(shape, index, mid);
-  });
-}
-
-/** Handle shape colors based on Mid frequencies. If no audio is present, randomly change colors over time */
-function handleShapeColors(shape: THREE.Mesh, index: number, mid: number | null) {
-  // 1) Determine hue: cycle slowly when no audio, map from mid when playing
-  let hue: number;
-  if (mid === null) {
-    shapeHues[index] = (shapeHues[index] + 0.001) % 1; // Increment and wrap at 1
-    hue = shapeHues[index];
-  } else {
-    hue = mid / 255; // Map mid (0-255) to hue (0-1)
-  }
-
-  // Apply hue to star and its children
-  (shape.material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-  for (let i = 0; i < shape.children.length; i++) {
-    ((shape.children[i] as THREE.Mesh).material as THREE.MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-  }
-}
-
-/** Handle shape orbiting around the center of the scene */
-function handleShapeOrbit(shape: THREE.Mesh, index: number) {
-  // 1) Increment the shape's angle based on the defined orbit speed
-  shapeAngles[index] += starOrbitSpeed;
-
-  // 2) Update the shape's position based on its angle and radius to create an orbiting effect
-  shape.position.x = Math.cos(shapeAngles[index]) * shapeRadii[index];
-  shape.position.z = Math.sin(shapeAngles[index]) * shapeRadii[index];
-}
-
-/** Handle shape pulsing based on the bass frequencies. If no audio is present, do not pulse */
-function handleShapePulse(shape: THREE.Mesh, index: number, bass: number | null) {
-  if (bass === null) return;
-
-  // 1) Calculate pulse amount based on bass level. (1 to 1 + starPulseIntensity)
-  const pulseAmount = 1 + (bass / 255) * starPulseIntensity;
-
-  // 2) Get the star's stable 3D base position and pulse outward along its full direction
-  const baseX = Math.cos(shapeAngles[index]) * shapeRadii[index];
-  const baseY = shapeBaseY[index];
-  const baseZ = Math.sin(shapeAngles[index]) * shapeRadii[index];
-
-  shape.position.x = baseX * pulseAmount;
-  shape.position.y = baseY * pulseAmount;
-  shape.position.z = baseZ * pulseAmount;
 }
 
 // Add the stars to the scene at random positions and store their properties for later use in reactions
