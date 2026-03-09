@@ -106,6 +106,7 @@ export default function Home() {
           onFileUpload={onFileUpload}
           onPlaybackToggle={onPlaybackToggle}
           onAudioClear={onAudioClear}
+          onDemoPlay={onDemoPlay}
         />
       )}
     </div>
@@ -216,7 +217,7 @@ async function onFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
   if(!event.target.files || event.target.files.length === 0) return;
 
   // 2) Process the new audio file and store it
-  const result = await uploadFile(event);
+  const result = await uploadFile(event.target.files[0]);
   if(result?.error) return alert(result.error);
 
   // 3) Play the audio
@@ -279,6 +280,20 @@ function onAudioClear() {
   // Clear the file input so the filename no longer shows
   const fileInput = document.getElementById('file-input') as HTMLInputElement | null;
   if (fileInput) fileInput.value = '';
+}
+
+/** Load and play the built-in demo track */
+async function onDemoPlay() {
+  clearAudioData();
+  resetShapes();
+
+  // Fetch demo file, convert to a File object, and upload it like a normal file input
+  const response = await fetch('/Cipher.mp3');
+  const blob = await response.blob();
+  const result = await uploadFile(new File([blob], 'Cipher', { type: 'audio/mpeg' }));
+  if (result?.error) return alert(result.error);
+
+  playAudio();
 }
 
 //==========================================================//

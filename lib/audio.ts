@@ -38,20 +38,16 @@ export const getSmoothedBass = () => {
 //========================= File Processing =============================//
 
 /** Handles file uploads and processes audio to be used */
-export async function uploadFile(event: React.ChangeEvent<HTMLInputElement>){
-    // 1) Check if a file was selected and store it temporarily
-    if(!event.target.files || event.target.files.length === 0) return; // No file selected, exit the function
-    const file = event.target.files[0];
-    
-    // 2) Verify and process the audio file.
+export async function uploadFile(file: File) {
+    // 1) Verify and process the audio file.
     try{
         audioData = await processAudioFile(file);
         currentFileName = file.name.replace(/\.[^/.]+$/, ''); // Store name without file extension
-    } catch (error) {
+    } catch {
         return { success: false, error: "There was a problem while processing the audio file." };
     }
 
-    // 3) Return processed audio
+    // 2) Return processed audio
     return { success: true };
 }
 

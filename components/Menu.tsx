@@ -5,11 +5,12 @@ interface MenuProps {
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   onPlaybackToggle: () => void;
   onAudioClear: () => void;
+  onDemoPlay: () => void;
 }
 
 //=============================================================//
 //===================== Menu Component ========================//
-export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle, onAudioClear }: MenuProps) {
+export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle, onAudioClear, onDemoPlay }: MenuProps) {
   return (
     <div className="mt-4 bg-white/50 p-4">
       {/* Title */}
@@ -20,6 +21,8 @@ export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle,
       {/* MP3 add button */}
       <div className="space-y-2 text-sm">
         <p>Upload MP3 Here</p>
+        
+        {/* File input*/}
         <input
           id="file-input"
           type="file"
@@ -28,6 +31,14 @@ export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle,
           onClick={onFileInputClick}
           onChange={onFileUpload}
         />
+        
+        {/* Demo track button */}
+        <button
+          onClick={onDemoPlay}
+          className="w-full py-1 text-xs bg-white/20 hover:bg-white/30 rounded transition-colors"
+        >
+          ▶ Play Demo
+        </button>
       </div>
 
       {/* Playback Bar */}

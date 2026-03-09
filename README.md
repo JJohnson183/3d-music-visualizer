@@ -42,3 +42,7 @@ Open [http://localhost:3000](http://localhost:3000) and upload an MP3 to start.
 ## Credits
 
 Created by **Jordan S. Johnson** - [GitHub](https://github.com/JJohnson183/3d-music-visualizer)
+
+Demo Music:
+"Cipher" by Kevin MacLeod (incompetech.com)     
+Licensed under Creative Commons Attribution 4.0
