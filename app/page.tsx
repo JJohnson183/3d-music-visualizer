@@ -105,6 +105,7 @@ export default function Home() {
           onFileInputClick={onFileInputClick}
           onFileUpload={onFileUpload}
           onPlaybackToggle={onPlaybackToggle}
+          onAudioClear={onAudioClear}
         />
       )}
     </div>
@@ -259,11 +260,25 @@ function updatePlaybackControls() {
   const audioLoaded = total > 0;
   btn.disabled = !audioLoaded; // Disable when no audio is loaded
   btn.textContent = getIsPlaying() ? '\u23F8' : '\u25B6'; // ⏸ when playing, ▶ when paused
+
+  // 4) Enable the clear button if audio is loaded, disable if not
+  const clearBtn = document.getElementById('playback-clear-btn') as HTMLButtonElement | null;
+  if (clearBtn) clearBtn.disabled = !audioLoaded;
 }
 
 /** Toggle between pause and resume */
 function onPlaybackToggle() {
   getIsPlaying() ? stopAudio() : resumeAudio();
+}
+
+/** Clear audio data and return to idle animation */
+function onAudioClear() {
+  clearAudioData();
+  resetShapes();
+
+  // Clear the file input so the filename no longer shows
+  const fileInput = document.getElementById('file-input') as HTMLInputElement | null;
+  if (fileInput) fileInput.value = '';
 }
 
 //==========================================================//

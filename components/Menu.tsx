@@ -4,11 +4,12 @@ interface MenuProps {
   onFileInputClick: (event: React.MouseEvent<HTMLInputElement>) => void;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   onPlaybackToggle: () => void;
+  onAudioClear: () => void;
 }
 
 //=============================================================//
 //===================== Menu Component ========================//
-export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle }: MenuProps) {
+export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle, onAudioClear }: MenuProps) {
   return (
     <div className="mt-4 bg-white/50 p-4">
       {/* Title */}
@@ -20,6 +21,7 @@ export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle 
       <div className="space-y-2 text-sm">
         <p>Upload MP3 Here</p>
         <input
+          id="file-input"
           type="file"
           accept="audio/mp3,audio/mpeg"
           className="block w-full text-sm text-gray-900 bg-gray-50 rounded border border-gray-300 cursor-pointer focus:outline-none"
@@ -46,7 +48,7 @@ export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle 
       </div>
 
       {/* Playback Controls */}
-      <PlaybackControls onPlaybackToggle={onPlaybackToggle} />
+      <PlaybackControls onPlaybackToggle={onPlaybackToggle} onAudioClear={onAudioClear} />
 
       {/* Reaction Info */}
       <ReactionInfo />
@@ -70,15 +72,25 @@ export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle 
 
 //=============================================================//
 //===================== Sub-components ========================//
-function PlaybackControls({ onPlaybackToggle }: { onPlaybackToggle: () => void }) {
+function PlaybackControls({ onPlaybackToggle, onAudioClear }: { onPlaybackToggle: () => void, onAudioClear: () => void }) {
   return (
-    <div className="flex justify-center mt-2">
+    <div className="flex justify-center gap-2 mt-2">
+      {/* Play/Pause Button */}
       <button
         id="playback-toggle-btn"
         onClick={onPlaybackToggle}
         className="px-4 py-1 text-sm bg-white/20 hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
       >
         ▶
+      </button>
+
+      {/* Clear Audio Button */}
+      <button
+        id="playback-clear-btn"
+        onClick={onAudioClear}
+        className="px-4 py-1 text-sm bg-white/20 hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
+      >
+        ✕
       </button>
     </div>
   );
