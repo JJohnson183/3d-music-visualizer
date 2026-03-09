@@ -4,6 +4,8 @@ import { getMid, getSmoothedBass } from "../audio";
 // Reusable objects to avoid per-frame allocation
 const _matrix = new THREE.Matrix4();
 const _color = new THREE.Color();
+let _cos = 0;
+let _sin = 0;
 
 //=============================================================//
 //=================== Reaction Context ========================//
@@ -30,29 +32,11 @@ export function shapeReactions(ctx: ReactionContext){
 
   // 3) Make stars react
   for (let index = 0; index < ctx.shapeAngles.length; index++) {
-    // Pre-compute trig for the next angle so orbit and pulse share the same values and reduce redundant calculations
-    const cos = Math.cos(ctx.shapeAngles[index] + ctx.starOrbitSpeed);
-    const sin = Math.sin(ctx.shapeAngles[index] + ctx.starOrbitSpeed);
-    ctx.shapeAngles[index] += ctx.starOrbitSpeed;
+    // Constant orbit (Must be done before pulse so the pulse sets on the new angle set by the orbit)
+    handleShapeOrbit(index, ctx);
 
-    //===== Position (orbit + bass pulse) =====//
-    // Update position based on angle and radius to create an orbiting effect
-    let x = cos * ctx.shapeRadii[index];
-    let y = ctx.shapeBaseY[index];
-    let z = sin * ctx.shapeRadii[index];
-
-    if (smoothedBass !== null) {
-      // Calculate pulse amount based on bass level (1 to 1 + starPulseIntensity) and pulse outward along full 3D direction
-      const pulseAmount = 1 + (smoothedBass / 255) * ctx.starPulseIntensity;
-      x *= pulseAmount;
-      y *= pulseAmount;
-      z *= pulseAmount;
-    }
-
-    // Set the same matrix on both the star and glow instances
-    _matrix.setPosition(x, y, z);
-    ctx.starMesh.setMatrixAt(index, _matrix);
-    ctx.glowMesh.setMatrixAt(index, _matrix);
+    //===== Position from center (bass pulse) =====//
+    handleShapePosition(index, smoothedBass, ctx);
 
     //===== Color (Mid) =====//
     handleShapeColors(index, mid, ctx);
@@ -63,6 +47,35 @@ export function shapeReactions(ctx: ReactionContext){
   ctx.glowMesh.instanceMatrix.needsUpdate = true;
   if (ctx.starMesh.instanceColor) ctx.starMesh.instanceColor.needsUpdate = true;
   if (ctx.glowMesh.instanceColor) ctx.glowMesh.instanceColor.needsUpdate = true;
+}
+
+/** Handle orbiting the shape around the center of the scene */
+function handleShapeOrbit(index: number, ctx: ReactionContext){
+	// Update angle for orbiting effect
+	_cos = Math.cos(ctx.shapeAngles[index] + ctx.starOrbitSpeed);
+	_sin = Math.sin(ctx.shapeAngles[index] + ctx.starOrbitSpeed);
+	ctx.shapeAngles[index] += ctx.starOrbitSpeed;
+}
+
+/** Handle shape position based on orbit angle and bass pulse. If no audio is present, only orbit */
+function handleShapePosition(index: number, smoothedBass: number | null, ctx: ReactionContext) {
+  // Update position based on angle and radius to create an orbiting effect
+  let x = _cos * ctx.shapeRadii[index];
+  let y = ctx.shapeBaseY[index];
+  let z = _sin * ctx.shapeRadii[index];
+
+  if (smoothedBass !== null) {
+    // Calculate pulse amount based on bass level (1 to 1 + starPulseIntensity) and pulse outward along full 3D direction
+    const pulseAmount = 1 + (smoothedBass / 255) * ctx.starPulseIntensity;
+    x *= pulseAmount;
+    y *= pulseAmount;
+    z *= pulseAmount;
+  }
+
+  // Set the same matrix on both the star and glow instances
+  _matrix.setPosition(x, y, z);
+  ctx.starMesh.setMatrixAt(index, _matrix);
+  ctx.glowMesh.setMatrixAt(index, _matrix);
 }
 
 /** Handle shape colors based on Mid frequencies. If no audio is present, randomly change colors over time */
