@@ -51,6 +51,7 @@ export function initScene() {
   //==== User controls ===//
   const controls = new OrbitControls(camera, renderer.domElement); // Allow zooming, panning, and rotating the scene with the mouse
   controls.enableDamping = true; // Add some inertia to make panning and rotating feel smoother
+  controls.enablePan = false; // Disable panning to keep the focus on the center of the scene
   controls.maxDistance = maxCameraZoom; // Limit how far the user can zoom out
   controls.minDistance = minCameraZoom; // Limit how far the user can zoom in
 

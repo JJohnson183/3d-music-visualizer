@@ -259,7 +259,7 @@ function updatePlaybackControls() {
   // 3) Enable the button if audio is loaded, disable if not. Set text to ⏸ when playing and ▶ when paused
   const audioLoaded = total > 0;
   btn.disabled = !audioLoaded; // Disable when no audio is loaded
-  btn.textContent = getIsPlaying() ? '\u23F8' : '\u25B6'; // ⏸ when playing, ▶ when paused
+  btn.textContent = getIsPlaying() ? 'Pause' : 'Play';
 
   // 4) Enable the clear button if audio is loaded, disable if not
   const clearBtn = document.getElementById('playback-clear-btn') as HTMLButtonElement | null;

@@ -12,7 +12,7 @@ interface MenuProps {
 //===================== Menu Component ========================//
 export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle, onAudioClear, onDemoPlay }: MenuProps) {
   return (
-    <div className="mt-4 bg-white/50 p-4">
+    <div className="mt-4 bg-white/50 p-4 w-72 md:w-auto max-h-[calc(100vh-5rem)] overflow-y-auto">
       {/* Title */}
       <h1 className="text-xl font-bold mb-2">
         3D Particle Music Visualizer
@@ -21,7 +21,7 @@ export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle,
       {/* MP3 add button */}
       <div className="space-y-2 text-sm">
         <p>Upload MP3 Here</p>
-        
+
         {/* File input*/}
         <input
           id="file-input"
@@ -37,7 +37,7 @@ export default function Menu({ onFileInputClick, onFileUpload, onPlaybackToggle,
           onClick={onDemoPlay}
           className="w-full py-1 text-xs bg-white/20 hover:bg-white/30 rounded transition-colors"
         >
-          ▶ Play Demo
+          Play Demo
         </button>
       </div>
 
@@ -92,7 +92,7 @@ function PlaybackControls({ onPlaybackToggle, onAudioClear }: { onPlaybackToggle
         onClick={onPlaybackToggle}
         className="px-4 py-1 text-sm bg-white/20 hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
       >
-        ▶
+        Play
       </button>
 
       {/* Clear Audio Button */}
@@ -101,7 +101,7 @@ function PlaybackControls({ onPlaybackToggle, onAudioClear }: { onPlaybackToggle
         onClick={onAudioClear}
         className="px-4 py-1 text-sm bg-white/20 hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed rounded transition-colors"
       >
-        ✕
+        Clear
       </button>
     </div>
   );
