@@ -31,7 +31,8 @@ export function initScene() {
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance on high-DPI screens
   renderer.setSize(window.innerWidth, window.innerHeight); // Set the size of the renderer to fill the entire screen
-  camera.position.setZ(100); // Start the camera pointed at the center of the scene
+  const isMobile = window.innerWidth < 768; // 768x is the common mobile breakpoint.
+  camera.position.setZ(isMobile ? 160 : 100); // Start further back on mobile so all particles are visible
 
   renderer.render(scene, camera); // Render the scene and camera
 
@@ -52,7 +53,7 @@ export function initScene() {
   const controls = new OrbitControls(camera, renderer.domElement); // Allow zooming, panning, and rotating the scene with the mouse
   controls.enableDamping = true; // Add some inertia to make panning and rotating feel smoother
   controls.enablePan = false; // Disable panning to keep the focus on the center of the scene
-  controls.maxDistance = maxCameraZoom; // Limit how far the user can zoom out
+  controls.maxDistance = isMobile ? 300 : maxCameraZoom; // Limit how far the user can zoom out
   controls.minDistance = minCameraZoom; // Limit how far the user can zoom in
 
   return { scene, camera, renderer, composer, controls };
