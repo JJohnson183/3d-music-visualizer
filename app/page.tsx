@@ -9,7 +9,7 @@ import { createStarInstances } from "../lib/scene/geometry"; // Shapes to add to
 import { computeSpherePlacement, computeRingPlacement } from "../lib/scene/placements"; // Placement math for scene layouts
 import { shapeReactions } from "../lib/scene/reactions"; // Audio reaction logic
 import { formatTime } from "../lib/utils"; // Utility functions
-import { debugSetup, debugPerformanceMonitor } from "../lib/debug"; // For testing and debugging the scene
+import { debugPerformanceMonitor } from "../lib/debug"; // For testing and debugging the scene
 import Menu from "../components/Menu"; // Menu UI component
 import { 
   uploadFile, 
@@ -67,7 +67,6 @@ export default function Home() {
     composer = init.composer;
     controls = init.controls;
 
-    //debugSetup(scene); // For testing only
     populateScene(); // Populate the scene with stars
 
     animate(); // Start the animation loop
@@ -175,27 +174,27 @@ function createSphereScene(index: number){
   glowMesh.setMatrixAt(index, _matrix);
 }
 
-function createRingScene(index: number) {
-  // 1) Compute a random position around a flat ring
-  const { position, angle, radius, baseY } = computeRingPlacement(starSpread);
+// function createRingScene(index: number) {
+//   // 1) Compute a random position around a flat ring
+//   const { position, angle, radius, baseY } = computeRingPlacement(starSpread);
 
-  // 2) Store the star's properties for later use in reactions
-  shapeAngles.push(angle);
-  shapeRadii.push(radius);
-  shapeBaseY.push(baseY);
+//   // 2) Store the star's properties for later use in reactions
+//   shapeAngles.push(angle);
+//   shapeRadii.push(radius);
+//   shapeBaseY.push(baseY);
 
-  // 3) Set initial random color
-  const hue = Math.random();
-  const color = new THREE.Color().setHSL(hue, 1, 0.5);
-  starMesh.setColorAt(index, color);
-  glowMesh.setColorAt(index, color);
-  shapeHues.push(hue);
+//   // 3) Set initial random color
+//   const hue = Math.random();
+//   const color = new THREE.Color().setHSL(hue, 1, 0.5);
+//   starMesh.setColorAt(index, color);
+//   glowMesh.setColorAt(index, color);
+//   shapeHues.push(hue);
 
-  // 4) Set the initial position for this instance
-  _matrix.setPosition(position.x, position.y, position.z);
-  starMesh.setMatrixAt(index, _matrix);
-  glowMesh.setMatrixAt(index, _matrix);
-}
+//   // 4) Set the initial position for this instance
+//   _matrix.setPosition(position.x, position.y, position.z);
+//   starMesh.setMatrixAt(index, _matrix);
+//   glowMesh.setMatrixAt(index, _matrix);
+// }
 
 //=============================================================//
 //===================== Logic Helpers =========================//
