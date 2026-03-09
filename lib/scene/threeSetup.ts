@@ -29,7 +29,7 @@ export function initScene() {
     canvas: document.getElementById("bg") as HTMLCanvasElement,
   });
 
-  renderer.setPixelRatio(window.devicePixelRatio); // Set the pixel ratio to the device's pixel ratio
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance on high-DPI screens
   renderer.setSize(window.innerWidth, window.innerHeight); // Set the size of the renderer to fill the entire screen
   camera.position.setZ(100); // Start the camera pointed at the center of the scene
 
